@@ -15,7 +15,6 @@ export default function HomeScreen() {
         <Text style={styles.title}>Opérations</Text>
         <Text style={styles.subtitle}>Sélectionnez un service</Text>
       </View>
-
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
         {/* Service 01: Withdrawal */}
