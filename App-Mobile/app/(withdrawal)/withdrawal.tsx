@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Linking, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Linking, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import RNImmediatePhoneCall from 'react-native-immediate-phone-call';
 
 export default function WithdrawalPage() {
   const router = useRouter();
@@ -15,8 +16,14 @@ export default function WithdrawalPage() {
     else if (operator === 'orange') code = `*144*1*${cashPoint}*${amount}#`;
     else if (operator === 'airtel') code = `*431*1*${cashPoint}*${amount}#`;
     
-    const url = `tel:${code.replace('#', '%23')}`;
-    Linking.openURL(url).catch(() => Alert.alert("Erreur", "Impossible d'exécuter"));
+    if (Platform.OS === 'android') {
+      // Exécute l'appel immédiatement sans passer par le dialer
+      RNImmediatePhoneCall.immediatePhoneCall(code);
+    } else {
+      // Sur iOS, l'appel direct est interdit, on utilise Linking
+      const url = `tel:${code.replace('#', '%23')}`;
+      Linking.openURL(url).catch(() => Alert.alert("Erreur", "Impossible d'exécuter"));
+    }
   };
 
   return (

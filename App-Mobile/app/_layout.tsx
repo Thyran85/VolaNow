@@ -5,8 +5,9 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+// Ancre de démarrage : l'app s'ouvre sur le groupe (home)
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: '(home)',
 };
 
 export default function RootLayout() {
@@ -15,8 +16,14 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        {/* Page d'accueil avec onglets */}
+        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+
+        {/* Flux Withdrawal — stack navigation sans header */}
+        <Stack.Screen name="(withdrawal)" options={{ headerShown: false }} />
+
+        {/* Flux Transfer — stack navigation sans header */}
+        <Stack.Screen name="(transfer)" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
