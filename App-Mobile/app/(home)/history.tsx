@@ -3,16 +3,18 @@ import { View, Text, FlatList, SafeAreaView, TouchableOpacity } from 'react-nati
 import { Feather } from '@expo/vector-icons';
 import { useHistory, HistoryItem } from '@/context/HistoryContext';
 import { useAppTheme } from '@/context/ThemeContext';
-import { createStyles } from './history.styles';
+import { useTranslation } from 'react-i18next';
+import { createStyles } from '@/styles/history.styles';
 
 export default function HistoryPage() {
   const { history, clearHistory } = useHistory();
   const { theme, isDark } = useAppTheme();
+  const { t, i18n } = useTranslation();
   const styles = createStyles(theme);
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', {
       day: '2-digit',
       month: 'short',
       hour: '2-digit',
@@ -32,17 +34,17 @@ export default function HistoryPage() {
       
       <View style={styles.contentContainer}>
         <Text style={styles.transactionTitle}>
-          {item.type === 'withdrawal' ? 'Retrait d\'argent' : 'Transfert d\'argent'}
+          {item.type === 'withdrawal' ? t('history.withdrawal') : t('history.transfer')}
         </Text>
         <Text style={styles.transactionTarget}>
-          {item.type === 'withdrawal' ? 'Point de retrait: ' : 'Destinataire: '}
+          {item.type === 'withdrawal' ? t('history.targetWithdrawal') : t('history.targetTransfer')}
           <Text style={styles.boldText}>{item.target}</Text>
         </Text>
         <Text style={styles.dateText}>{formatDate(item.date)}</Text>
       </View>
       
       <View style={styles.amountContainer}>
-        <Text style={styles.amountText}>{parseInt(item.amount).toLocaleString()} Ar</Text>
+        <Text style={styles.amountText}>{parseInt(item.amount).toLocaleString()} {t('common.ar')}</Text>
         <Text style={[styles.operatorText, { color: getOperatorColor(item.operator) }]}>
           {item.operator.toUpperCase()}
         </Text>
@@ -62,10 +64,10 @@ export default function HistoryPage() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Historique</Text>
+        <Text style={styles.headerTitle}>{t('history.title')}</Text>
         {history.length > 0 && (
           <TouchableOpacity onPress={clearHistory}>
-            <Text style={styles.clearText}>Effacer</Text>
+            <Text style={styles.clearText}>{t('history.clear')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -73,7 +75,7 @@ export default function HistoryPage() {
       {history.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Feather name="clock" size={64} color={isDark ? "#222" : "#DDD"} />
-          <Text style={styles.emptyText}>Aucune transaction enregistrée</Text>
+          <Text style={styles.emptyText}>{t('history.empty')}</Text>
         </View>
       ) : (
         <FlatList

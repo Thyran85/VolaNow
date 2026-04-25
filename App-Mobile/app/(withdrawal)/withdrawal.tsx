@@ -8,11 +8,13 @@ import { isValidCashPointId, isValidAmount } from '@/security/validation';
 import { TRANSACTION_CONFIG } from '@/constants/config';
 import { useHistory } from '@/context/HistoryContext';
 import { useAppTheme } from '@/context/ThemeContext';
-import { createTransactionStyles } from '@/constants/transaction.styles';
+import { useTranslation } from 'react-i18next';
+import { createTransactionStyles } from '@/styles/transaction.styles';
 
 export default function WithdrawalPage() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
+  const { t } = useTranslation();
   const { addHistoryItem } = useHistory();
   const styles = createTransactionStyles(theme);
   
@@ -28,11 +30,11 @@ export default function WithdrawalPage() {
 
   const handleWithdrawal = async () => {
     if (!isValidCashPointId(cashPoint)) {
-      Alert.alert('Erreur', 'ID du point de retrait invalide (10 chiffres attendus)');
+      Alert.alert(t('common.error'), t('withdrawal.errorId'));
       return;
     }
     if (!isValidAmount(amount)) {
-      Alert.alert('Erreur', `Montant invalide (max ${TRANSACTION_CONFIG.maxAmount.toLocaleString()} Ar)`);
+      Alert.alert(t('common.error'), `${t('withdrawal.errorAmount')} (max ${TRANSACTION_CONFIG.maxAmount.toLocaleString()} ${t('common.ar')})`);
       return;
     }
 
@@ -53,7 +55,7 @@ export default function WithdrawalPage() {
       });
 
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible d\'exécuter l\'appel');
+      Alert.alert(t('common.error'), 'Impossible d\'exécuter l\'appel');
     }
   };
 
@@ -63,11 +65,11 @@ export default function WithdrawalPage() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Retrait d'argent</Text>
+        <Text style={styles.headerTitle}>{t('withdrawal.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>1. Choisir l'opérateur</Text>
+        <Text style={styles.sectionTitle}>{t('withdrawal.step1')}</Text>
         <View style={styles.operatorGrid}>
           {operators.map((op) => (
             <TouchableOpacity
@@ -86,14 +88,14 @@ export default function WithdrawalPage() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>2. Informations de retrait</Text>
+        <Text style={styles.sectionTitle}>{t('withdrawal.step2')}</Text>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>ID du Point de Retrait</Text>
+          <Text style={styles.label}>{t('withdrawal.cashPointLabel')}</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="storefront-outline" size={20} color={theme.icon} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Ex: 0340000000"
+              placeholder={t('withdrawal.cashPointPlaceholder')}
               placeholderTextColor={theme.icon}
               keyboardType="numeric"
               value={cashPoint}
@@ -104,12 +106,12 @@ export default function WithdrawalPage() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Montant (Ar)</Text>
+          <Text style={styles.label}>{t('withdrawal.amountLabel')}</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="cash-outline" size={20} color={theme.icon} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Ex: 10000"
+              placeholder={t('withdrawal.amountPlaceholder')}
               placeholderTextColor={theme.icon}
               keyboardType="numeric"
               value={amount}
@@ -124,7 +126,7 @@ export default function WithdrawalPage() {
                 style={styles.suggestionChip}
                 onPress={() => setAmount(val)}
               >
-                <Text style={styles.suggestionText}>{parseInt(val).toLocaleString()}</Text>
+                <Text style={styles.suggestionText}>{parseInt(val).toLocaleString()} {t('common.ar')}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -138,11 +140,11 @@ export default function WithdrawalPage() {
           onPress={handleWithdrawal}
           disabled={!isValidAmount(amount) || !isValidCashPointId(cashPoint)}
         >
-          <Text style={styles.actionButtonText}>Confirmer le retrait</Text>
+          <Text style={styles.actionButtonText}>{t('withdrawal.confirmBtn')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.helperText}>
-          L'appel USSD sera lancé automatiquement. Vous devrez saisir votre code secret pour valider.
+          {t('withdrawal.helper')}
         </Text>
       </ScrollView>
     </SafeAreaView>

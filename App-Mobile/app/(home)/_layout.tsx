@@ -2,9 +2,11 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useAppTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function HomeLayout() {
   const { theme } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -22,21 +24,21 @@ export default function HomeLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Accueil',
+          title: t('common.home'),
           tabBarIcon: ({ color }) => <Feather size={24} name="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: 'Historique',
+          title: t('common.history'),
           tabBarIcon: ({ color }) => <Feather size={24} name="clock" color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Paramètres',
+          title: t('common.settings'),
           tabBarIcon: ({ color }) => <Feather size={24} name="settings" color={color} />,
         }}
       />

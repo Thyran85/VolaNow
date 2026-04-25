@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { HistoryProvider } from '@/context/HistoryContext';
 import { ThemeProvider as AppThemeProvider } from '@/context/ThemeContext';
+import '@/constants/i18n';
 
 // Ancre de démarrage : l'app s'ouvre sur le groupe (home)
 export const unstable_settings = {
@@ -16,6 +17,28 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    const requestPermission = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.CALL_PHONE,
+            {
+              title: "Permission",
+              message: "USSD Permission",
+              buttonNeutral: "Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK"
+            }
+          );
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    };
+    requestPermission();
+  }, []);
 
   return (
     <AppThemeProvider>

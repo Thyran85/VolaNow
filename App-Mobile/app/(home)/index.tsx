@@ -3,18 +3,20 @@ import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from "react-na
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/context/ThemeContext";
-import { createStyles } from "./index.styles";
+import { useTranslation } from "react-i18next";
+import { createStyles } from "@/styles/index.styles";
 
 export default function Index() {
   const { theme, isDark } = useAppTheme();
+  const { t } = useTranslation();
   const styles = createStyles(theme);
   const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.titleText}>USSD Services</Text>
-        <Text style={styles.welcomeText}>Madagascar</Text>
+        <Text style={styles.titleText}>{t('home.title')}</Text>
+        <Text style={styles.welcomeText}>{t('home.subtitle')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -27,12 +29,12 @@ export default function Index() {
             <View style={[styles.actionIcon, { backgroundColor: isDark ? '#CCFF0015' : '#B0FC5133' }]}>
               <Ionicons name="arrow-down-circle" size={24} color={theme.tintDark} />
             </View>
-            <Text style={styles.serviceTag}>SERVICE 01</Text>
+            <Text style={styles.serviceTag}>{t('home.service01')}</Text>
           </View>
-          <Text style={styles.cardTitle}>Retrait Cash</Text>
-          <Text style={styles.cardDesc}>Effectuez vos retraits d'argent via MVola, Orange ou Airtel.</Text>
+          <Text style={styles.cardTitle}>{t('home.withdrawalTitle')}</Text>
+          <Text style={styles.cardDesc}>{t('home.withdrawalDesc')}</Text>
           <View style={styles.cardFooter}>
-            <Text style={styles.actionBtnText}>Initialiser</Text>
+            <Text style={styles.actionBtnText}>{t('home.initialize')}</Text>
             <Ionicons name="arrow-forward" size={18} color={theme.tintDark} />
           </View>
         </TouchableOpacity>
@@ -46,12 +48,12 @@ export default function Index() {
             <View style={[styles.actionIcon, { backgroundColor: isDark ? '#B0FC5115' : '#86D12E33' }]}>
               <Ionicons name="repeat" size={24} color={theme.tintDark} />
             </View>
-            <Text style={styles.serviceTag}>SERVICE 02</Text>
+            <Text style={styles.serviceTag}>{t('home.service02')}</Text>
           </View>
-          <Text style={styles.cardTitle}>Transfert Rapide</Text>
-          <Text style={styles.cardDesc}>Envoyez de l'argent vers n'importe quel numéro local.</Text>
+          <Text style={styles.cardTitle}>{t('home.transferTitle')}</Text>
+          <Text style={styles.cardDesc}>{t('home.transferDesc')}</Text>
           <View style={styles.cardFooter}>
-            <Text style={styles.actionBtnText}>Transférer</Text>
+            <Text style={styles.actionBtnText}>{t('home.transfer')}</Text>
             <Ionicons name="arrow-forward" size={18} color={theme.tintDark} />
           </View>
         </TouchableOpacity>

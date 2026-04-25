@@ -8,11 +8,13 @@ import { isValidPhoneNumber, isValidAmount } from '@/security/validation';
 import { TRANSACTION_CONFIG } from '@/constants/config';
 import { useHistory } from '@/context/HistoryContext';
 import { useAppTheme } from '@/context/ThemeContext';
-import { createTransactionStyles } from '@/constants/transaction.styles';
+import { useTranslation } from 'react-i18next';
+import { createTransactionStyles } from '@/styles/transaction.styles';
 
 export default function TransferPage() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
+  const { t } = useTranslation();
   const { addHistoryItem } = useHistory();
   const styles = createTransactionStyles(theme);
 
@@ -29,11 +31,11 @@ export default function TransferPage() {
 
   const handleTransfer = async () => {
     if (!isValidPhoneNumber(phone)) {
-      Alert.alert("Erreur", "Numéro de téléphone invalide (10 chiffres attendus)");
+      Alert.alert(t('common.error'), t('transfer.errorPhone'));
       return;
     }
     if (!isValidAmount(amount)) {
-      Alert.alert("Erreur", `Montant invalide (max ${TRANSACTION_CONFIG.maxAmount.toLocaleString()} Ar)`);
+      Alert.alert(t('common.error'), `${t('withdrawal.errorAmount')} (max ${TRANSACTION_CONFIG.maxAmount.toLocaleString()} ${t('common.ar')})`);
       return;
     }
 
@@ -54,7 +56,7 @@ export default function TransferPage() {
       });
 
     } catch (error) {
-      Alert.alert("Erreur", "Impossible d'exécuter l'appel");
+      Alert.alert(t('common.error'), 'Impossible d\'exécuter l\'appel');
     }
   };
 
@@ -64,11 +66,11 @@ export default function TransferPage() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transfert d'argent</Text>
+        <Text style={styles.headerTitle}>{t('transfer.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>1. Mon Opérateur (Envoi)</Text>
+        <Text style={styles.sectionTitle}>{t('transfer.step1')}</Text>
         <View style={styles.operatorGrid}>
           {operators.map((op) => (
             <TouchableOpacity
@@ -87,7 +89,7 @@ export default function TransferPage() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>2. Opérateur Destinataire</Text>
+        <Text style={styles.sectionTitle}>{t('transfer.step2')}</Text>
         <View style={styles.operatorGrid}>
           {operators.map((op) => (
             <TouchableOpacity
@@ -106,9 +108,9 @@ export default function TransferPage() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>3. Détails du transfert</Text>
+        <Text style={styles.sectionTitle}>{t('transfer.step3')}</Text>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Numéro du destinataire</Text>
+          <Text style={styles.label}>{t('transfer.recipientPhone')}</Text>
           <View style={styles.inputWrapper}>
             <Feather name="phone" size={20} color={theme.icon} style={styles.inputIcon} />
             <TextInput
@@ -124,7 +126,7 @@ export default function TransferPage() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Montant (Ar)</Text>
+          <Text style={styles.label}>{t('withdrawal.amountLabel')}</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="cash-outline" size={20} color={theme.icon} style={styles.inputIcon} />
             <TextInput
@@ -144,7 +146,7 @@ export default function TransferPage() {
                 style={styles.suggestionChip}
                 onPress={() => setAmount(val)}
               >
-                <Text style={styles.suggestionText}>{parseInt(val).toLocaleString()}</Text>
+                <Text style={styles.suggestionText}>{parseInt(val).toLocaleString()} {t('common.ar')}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -158,11 +160,11 @@ export default function TransferPage() {
           onPress={handleTransfer}
           disabled={!isValidAmount(amount) || !isValidPhoneNumber(phone)}
         >
-          <Text style={styles.actionButtonText}>Envoyer l'argent</Text>
+          <Text style={styles.actionButtonText}>{t('transfer.confirmBtn')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.helperText}>
-          Le code USSD sera généré pour un transfert {senderOperator} vers {recipientOperator}.
+          {t('transfer.helper', { from: senderOperator.toUpperCase(), to: recipientOperator.toUpperCase() })}
         </Text>
       </ScrollView>
     </SafeAreaView>
