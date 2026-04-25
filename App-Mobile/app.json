@@ -31,6 +31,18 @@
     "plugins": [
       "expo-router",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow VolaNow to access your camera to scan recharge cards."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow VolaNow to access your photos to select a recharge card image."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
