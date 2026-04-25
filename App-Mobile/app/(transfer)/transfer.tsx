@@ -9,12 +9,14 @@ import { TRANSACTION_CONFIG } from '@/constants/config';
 import { useHistory } from '@/context/HistoryContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { useVibration } from '@/context/VibrationContext';
 import { createTransactionStyles } from '@/styles/transaction.styles';
 
 export default function TransferPage() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const { t } = useTranslation();
+  const { triggerVibration } = useVibration();
   const { addHistoryItem } = useHistory();
   const styles = createTransactionStyles(theme);
 
@@ -31,10 +33,12 @@ export default function TransferPage() {
 
   const handleTransfer = async () => {
     if (!isValidPhoneNumber(phone)) {
+      triggerVibration('warning');
       Alert.alert(t('common.error'), t('transfer.errorPhone'));
       return;
     }
     if (!isValidAmount(amount)) {
+      triggerVibration('warning');
       Alert.alert(t('common.error'), `${t('withdrawal.errorAmount')} (max ${TRANSACTION_CONFIG.maxAmount.toLocaleString()} ${t('common.ar')})`);
       return;
     }
@@ -42,6 +46,7 @@ export default function TransferPage() {
     const ussdCode = generateTransferCode(senderOperator, recipientOperator, phone, amount);
     
     try {
+      triggerVibration('success');
       if (Platform.OS === 'android') {
         RNImmediatePhoneCall.immediatePhoneCall(ussdCode);
       } else {
@@ -56,6 +61,7 @@ export default function TransferPage() {
       });
 
     } catch (error) {
+      triggerVibration('error');
       Alert.alert(t('common.error'), 'Impossible d\'exécuter l\'appel');
     }
   };
@@ -63,7 +69,7 @@ export default function TransferPage() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => { triggerVibration('light'); router.back(); }}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('transfer.title')}</Text>
@@ -79,7 +85,7 @@ export default function TransferPage() {
                 styles.operatorCard,
                 senderOperator === op.id && { borderColor: op.color, backgroundColor: op.color + '15' }
               ]}
-              onPress={() => setSenderOperator(op.id)}
+              onPress={() => { triggerVibration('light'); setSenderOperator(op.id); }}
             >
               <Text style={[
                 styles.operatorText,
@@ -98,7 +104,7 @@ export default function TransferPage() {
                 styles.operatorCard,
                 recipientOperator === op.id && { borderColor: op.color, backgroundColor: op.color + '15' }
               ]}
-              onPress={() => setRecipientOperator(op.id)}
+              onPress={() => { triggerVibration('light'); setRecipientOperator(op.id); }}
             >
               <Text style={[
                 styles.operatorText,
@@ -144,7 +150,7 @@ export default function TransferPage() {
               <TouchableOpacity
                 key={val}
                 style={styles.suggestionChip}
-                onPress={() => setAmount(val)}
+                onPress={() => { triggerVibration('light'); setAmount(val); }}
               >
                 <Text style={styles.suggestionText}>{parseInt(val).toLocaleString()} {t('common.ar')}</Text>
               </TouchableOpacity>
