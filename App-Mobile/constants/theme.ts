@@ -5,25 +5,36 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#1A1A1A',
+    textSecondary: '#666666',
+    background: '#F5F7F2', // Un gris très clair avec une pointe de vert
+    surface: '#FFFFFF',    // Fond des cartes
+    border: '#E2E8F0',
+    input: '#EDF2F7',
+    tint: '#B0FC51',       // On garde le vert néon comme accent
+    tintDark: '#86D12E',   // Version plus sombre pour le texte en mode clair
+    icon: '#4A5568',
+    tabIconDefault: '#A0AEC0',
+    tabIconSelected: '#1A1A1A',
+    danger: '#E53E3E',
+    success: '#38A169',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#FFFFFF',
+    textSecondary: '#888888',
+    background: '#0E0E0E', // Noir profond
+    surface: '#18191C',    // Gris anthracite pour les cartes
+    border: '#2A2A2A',
+    input: '#1A1A1A',
+    tint: '#B0FC51',
+    tintDark: '#CCFF00',
+    icon: '#888888',
+    tabIconDefault: '#444444',
+    tabIconSelected: '#CCFF00',
+    danger: '#FF4444',
+    success: '#CCFF00',
   },
 };
 
