@@ -1,37 +1,48 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, SafeAreaView } from "react-native";
-import { Link, Stack, router } from "expo-router";
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, SafeAreaView, Platform, Linking, Alert } from "react-native";
+import { Link, Stack, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-
-type Operator = "mvola" | "orange" | "airtel";
+import RNImmediatePhoneCall from 'react-native-immediate-phone-call';
+import { generateTransferCode, OperatorId } from '@/constants/ussd';
+import { isValidPhoneNumber, isValidAmount } from '@/security/validation';
+import { TRANSACTION_CONFIG } from '@/constants/config';
 
 const operators = [
-  { id: "mvola" as Operator, name: "MVola", color: "#E60000" },
-  { id: "orange" as Operator, name: "Orange Money", color: "#FF7900" },
-  { id: "airtel" as Operator, name: "Airtel Money", color: "#ED1C24" },
+  { id: "mvola" as OperatorId, name: "MVola", color: "#E60000" },
+  { id: "orange" as OperatorId, name: "Orange Money", color: "#FF7900" },
+  { id: "airtel" as OperatorId, name: "Airtel Money", color: "#ED1C24" },
 ];
 
 export default function TransferPage() {
-  const [sendingOperator, setSendingOperator] = useState<Operator>("mvola");
-  const [receivingOperator, setReceivingOperator] = useState<Operator>("orange");
+  const router = useRouter();
+  const [sendingOperator, setSendingOperator] = useState<OperatorId>("mvola");
+  const [receivingOperator, setReceivingOperator] = useState<OperatorId>("orange");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  const handleNumberPad = (digit: string) => {
-    if (digit === "⌫") {
-      setPhoneNumber(phoneNumber.slice(0, -1));
-    } else if (phoneNumber.length < 10) {
-      setPhoneNumber(phoneNumber + digit);
+  const executeUssd = () => {
+    const code = generateTransferCode(sendingOperator, receivingOperator, phoneNumber, amount);
+    
+    if (Platform.OS === 'android') {
+      RNImmediatePhoneCall.immediatePhoneCall(code);
+    } else {
+      const url = `tel:${code.replace('#', '%23')}`;
+      Linking.openURL(url).catch(() => Alert.alert("Erreur", "Impossible d'exécuter"));
     }
   };
 
   const handleConfirm = () => {
-    if (phoneNumber.length === 10 && amount) {
+    if (isValidPhoneNumber(phoneNumber) && isValidAmount(amount)) {
       setIsConfirmed(true);
+      executeUssd();
       setTimeout(() => setIsConfirmed(false), 3000);
+    } else {
+      Alert.alert("Sécurité", "Veuillez entrer un numéro valide (10 chiffres) et un montant correct.");
     }
   };
+
+  const isButtonDisabled = !isValidPhoneNumber(phoneNumber) || !isValidAmount(amount);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -55,7 +66,7 @@ export default function TransferPage() {
           <View style={styles.section}>
             <Text style={styles.label}>From (Sending Operator)</Text>
             <View style={styles.operatorRow}>
-              {operators.map((op) => (
+              {(operators as {id: OperatorId, name: string, color: string}[]).map((op) => (
                 <Pressable
                   key={`send-${op.id}`}
                   onPress={() => setSendingOperator(op.id)}
@@ -84,7 +95,7 @@ export default function TransferPage() {
             {/* Receiving Operator */}
             <Text style={styles.label}>To (Receiving Operator)</Text>
             <View style={styles.operatorRow}>
-              {operators.map((op) => (
+              {(operators as {id: OperatorId, name: string, color: string}[]).map((op) => (
                 <Pressable
                   key={`receive-${op.id}`}
                   onPress={() => setReceivingOperator(op.id)}
@@ -104,13 +115,20 @@ export default function TransferPage() {
             </View>
           </View>
 
-          {/* Phone Number Display */}
+          {/* Recipient Phone Number */}
           <View style={styles.section}>
             <Text style={styles.label}>Recipient Phone Number</Text>
-            <View style={styles.phoneDisplay}>
-              <Text style={styles.phoneDisplayText}>
-                {phoneNumber || "_ _ _ _ _ _ _ _ _ _"}
-              </Text>
+            <View style={styles.phoneInputContainer}>
+              <TextInput
+                style={styles.phoneInput}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                placeholder="03XXXXXXXX"
+                placeholderTextColor="#444"
+                keyboardType="numeric"
+                maxLength={10}
+              />
+              <Feather name="edit-2" size={16} color="#666" style={styles.editIcon} />
             </View>
           </View>
 
@@ -125,34 +143,27 @@ export default function TransferPage() {
               placeholderTextColor="#666"
               keyboardType="numeric"
             />
-          </View>
-
-          {/* Numeric Keypad */}
-          <View style={styles.keypad}>
-            {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "⌫"].map((digit, idx) => (
-              <Pressable
-                key={idx}
-                onPress={() => handleNumberPad(digit)}
-                style={({ pressed }) => [
-                  styles.keypadButton,
-                  digit === "⌫" ? styles.keypadButtonDelete : null,
-                  pressed && styles.keypadButtonPressed,
-                ]}
-              >
-                <Text style={[styles.keypadButtonText, digit === "⌫" && styles.keypadButtonTextDelete]}>
-                  {digit}
-                </Text>
-              </Pressable>
-            ))}
+            {/* Amount Suggestions */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionList}>
+              {TRANSACTION_CONFIG.amountSuggestions.map((suggestion) => (
+                <Pressable 
+                  key={suggestion} 
+                  style={styles.suggestionBtn} 
+                  onPress={() => setAmount(suggestion)}
+                >
+                  <Text style={styles.suggestionText}>{parseInt(suggestion).toLocaleString()} Ar</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
 
           {/* Confirm Button */}
           <Pressable
             onPress={handleConfirm}
-            disabled={phoneNumber.length !== 10 || !amount}
+            disabled={isButtonDisabled}
             style={({ pressed }) => [
               styles.confirmButton,
-              (phoneNumber.length !== 10 || !amount) && styles.confirmButtonDisabled,
+              isButtonDisabled && styles.confirmButtonDisabled,
               pressed && styles.confirmButtonPressed,
             ]}
           >
@@ -267,19 +278,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2a2a2a',
   },
-  phoneDisplay: {
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#202020',
     borderWidth: 1,
     borderColor: '#2a2a2a',
     borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  phoneDisplayText: {
+  phoneInput: {
+    flex: 1,
     color: 'white',
     fontSize: 24,
-    letterSpacing: 4,
-    fontFamily: 'monospace', // Not natively supported the same way on all platforms, but mostly ok
+    paddingVertical: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 2,
+  },
+  editIcon: {
+    marginLeft: 10,
+    opacity: 0.5,
   },
   amountInput: {
     backgroundColor: '#202020',
@@ -291,45 +309,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
   },
-  keypad: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 12,
-    marginBottom: 24,
-  },
-  keypadButton: {
-    width: '31%',
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: '#202020',
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  keypadButtonPressed: {
-    backgroundColor: '#252525',
-    transform: [{ scale: 0.95 }],
-  },
-  keypadButtonDelete: {
-    width: '65%', // spans ~2 columns
-    backgroundColor: '#2a2a2a',
-  },
-  keypadButtonText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  keypadButtonTextDelete: {
-    color: '#B0FC51',
-  },
   confirmButton: {
     backgroundColor: '#B0FC51',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 24,
   },
   confirmButtonPressed: {
     backgroundColor: '#a0ec41',
@@ -346,6 +332,24 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: '#181818',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  suggestionList: {
+    marginTop: 12,
+    flexDirection: 'row',
+  },
+  suggestionBtn: {
+    backgroundColor: '#202020',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#B0FC5133',
+  },
+  suggestionText: {
+    color: '#B0FC51',
+    fontSize: 13,
     fontWeight: '600',
   },
 });
