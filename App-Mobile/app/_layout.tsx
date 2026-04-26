@@ -9,6 +9,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { HistoryProvider } from '@/context/HistoryContext';
 import { ThemeProvider as AppThemeProvider } from '@/context/ThemeContext';
 import { VibrationProvider } from '@/context/VibrationContext';
+import { Camera } from 'expo-camera';
+import { requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
 import '@/constants/i18n';
 
 // Ancre de démarrage : l'app s'ouvre sur le groupe (home)
@@ -20,16 +22,17 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    const requestPermission = async () => {
+    const requestPermissions = async () => {
+      // 1. Permission Appels (Android uniquement)
       if (Platform.OS === 'android') {
         try {
           await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.CALL_PHONE,
             {
-              title: "Permission",
-              message: "USSD Permission",
-              buttonNeutral: "Later",
-              buttonNegative: "Cancel",
+              title: "Permission d'appel",
+              message: "VolaNow a besoin d'accéder aux appels pour exécuter les codes USSD.",
+              buttonNeutral: "Plus tard",
+              buttonNegative: "Annuler",
               buttonPositive: "OK"
             }
           );
@@ -37,8 +40,17 @@ export default function RootLayout() {
           console.warn(err);
         }
       }
+
+      // 2. Permission Caméra & Galerie (iOS et Android)
+      try {
+        await Camera.requestCameraPermissionsAsync();
+        await requestMediaLibraryPermissionsAsync();
+      } catch (err) {
+        console.warn("Permission camera/gallery error:", err);
+      }
     };
-    requestPermission();
+    
+    requestPermissions();
   }, []);
 
   return (

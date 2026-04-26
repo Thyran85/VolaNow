@@ -8,17 +8,12 @@ export const createStyles = (theme: any) => StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 40,
-    marginBottom: 20,
+    marginBottom: 10,
   },
-  titleText: {
-    color: theme.text,
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  welcomeText: {
-    color: theme.textSecondary,
-    fontSize: 16,
-    marginTop: 4,
+  logoHeader: {
+    width: 180,
+    height: 45,
+    marginLeft: -10,
   },
   scrollContent: {
     padding: 20,

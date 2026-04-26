@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/context/ThemeContext";
@@ -17,8 +17,11 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.titleText}>{t('home.title')}</Text>
-        <Text style={styles.welcomeText}>{t('home.subtitle')}</Text>
+        <Image 
+          source={isDark ? require('@/assets/images/logo_VolaNow/Logo_Dark.png') : require('@/assets/images/logo_VolaNow/Logo_Light.png')} 
+          style={styles.logoHeader} 
+          resizeMode="contain"
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
