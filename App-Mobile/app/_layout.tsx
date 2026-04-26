@@ -67,6 +67,9 @@ export default function RootLayout() {
 
               {/* Flux Transfer — stack navigation sans header */}
               <Stack.Screen name="(transfer)" options={{ headerShown: false }} />
+
+              {/* Flux Recharge — stack navigation sans header */}
+              <Stack.Screen name="(recharge)" options={{ headerShown: false }} />
             </Stack>
             <StatusBar style="auto" />
           </ThemeProvider>

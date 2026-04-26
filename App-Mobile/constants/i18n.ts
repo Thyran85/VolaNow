@@ -43,6 +43,7 @@ const resources = {
         rechargeBtn: "RECHARGER",
         detectBtn: "DÉTECTER",
         scan: "SCANNER",
+        retry: "Réessayer",
         permissionError: "Permission caméra requise",
       },
       withdrawal: {

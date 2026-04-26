@@ -22,7 +22,7 @@ export default function SettingsPage() {
   ];
 
   const developers = [
-    { id: 1, name: 'Thyran', role: 'Fullstack Developer', url: 'https://github.com/thyran' },
+    { id: 1, name: 'Thierry R.', role: 'Lead Developer', url: 'https://github.com/thyran85' },
     { id: 2, name: 'Dev 02', role: 'UI/UX Designer', url: 'https://portfolio-dev2.com' },
     { id: 3, name: 'Dev 03', role: 'Mobile Specialist', url: 'https://portfolio-dev3.com' },
   ];

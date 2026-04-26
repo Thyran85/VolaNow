@@ -82,23 +82,19 @@ export default function RechargePage() {
         )}
       </View>
 
-      {/* 2. COUCHE UI (HEADER + SCAN + FOOTER) */}
+      {/* 2. COUCHE UI (BOUTON RETOUR + SCAN + FOOTER) */}
       <SafeAreaView style={styles.mainOverlay} edges={['top', 'bottom']}>
         
-        {/* HEADER FIXE EN HAUT */}
-        <View style={[styles.header, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-          <TouchableOpacity 
-            style={styles.navButton} 
-            onPress={() => {
-                triggerVibration('light');
-                imageUri ? setImageUri(null) : router.back();
-            }}
-          >
-            <Ionicons name={imageUri ? "close" : "arrow-back"} size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('recharge.scan')}</Text>
-          <View style={{ width: 45 }} />
-        </View>
+        {/* BOUTON RETOUR FLOTTANT */}
+        <TouchableOpacity 
+          style={styles.floatingNavButton} 
+          onPress={() => {
+              triggerVibration('light');
+              imageUri ? setImageUri(null) : router.back();
+          }}
+        >
+          <Ionicons name={imageUri ? "close" : "arrow-back"} size={28} color="#FFF" />
+        </TouchableOpacity>
 
         {/* ZONE DU CADRE (Prend l'espace central) */}
         <View style={styles.scanContainer}>
@@ -135,12 +131,25 @@ export default function RechargePage() {
             </View>
 
             <View style={styles.actionRow}>
-              <TouchableOpacity 
-                style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
-                onPress={pickImage}
-              >
-                <Ionicons name="images-outline" size={26} color={theme.text} />
-              </TouchableOpacity>
+              {detectedOp ? (
+                <TouchableOpacity 
+                  style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
+                  onPress={() => {
+                    triggerVibration('light');
+                    setDetectedOp(null);
+                    setImageUri(null);
+                  }}
+                >
+                  <Ionicons name="refresh-outline" size={26} color={theme.text} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
+                  onPress={pickImage}
+                >
+                  <Ionicons name="images-outline" size={26} color={theme.text} />
+                </TouchableOpacity>
+              )}
               
               <TouchableOpacity 
                   style={[styles.mainButton, { backgroundColor: detectedOp ? detectedOp.color : theme.tint }]} 
@@ -149,15 +158,9 @@ export default function RechargePage() {
                           runAIAnalysis('orange');
                       } else {
                           triggerVibration('success');
-                          // On utilise le préfixe de l'opérateur détecté (ex: *141*) 
-                          // suivi d'un code fictif (en attendant une vraie lecture OCR)
                           const rechargeCode = "123456789012"; 
                           const ussdString = `tel:${detectedOp.prefix}${rechargeCode}#`;
-                          
                           Linking.openURL(ussdString);
-
-                          // Optionnel: ajouter à l'historique
-                          // addHistoryItem({ type: 'recharge', amount: 'Carte', target: detectedOp.name, operator: detectedOp.id });
                       }
                   }}
               >
@@ -180,15 +183,17 @@ const styles = StyleSheet.create({
   fullPreviewImage: { flex: 1 },
   mainOverlay: { flex: 1, zIndex: 1, justifyContent: 'space-between' },
 
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingVertical: 15,
+  floatingNavButton: { 
+    position: 'absolute', 
+    top: 20, 
+    left: 20, 
+    zIndex: 10, 
+    padding: 12, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  headerTitle: { color: '#FFF', fontSize: 13, fontWeight: '900', letterSpacing: 2 },
-  navButton: { padding: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12 },
 
   scanContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   frame: { position: 'relative', justifyContent: 'center', alignItems: 'center', borderWidth: 1 },

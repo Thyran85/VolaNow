@@ -4,7 +4,7 @@
     "slug": "App_mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo_VolaNow/Logo_Light.png",
+    "icon": "./assets/images/logo_VolaNow/Icon_Volanao.png",
     "scheme": "appmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -12,10 +12,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo_VolaNow/Logo_Light.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/logo_VolaNow/Icon_Volanao.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -25,8 +23,7 @@
       "package": "com.anonymous.App_mobile"
     },
     "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",
