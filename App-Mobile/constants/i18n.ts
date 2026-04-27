@@ -93,7 +93,7 @@ const resources = {
         on: "Activé",
         off: "Désactivé",
         helpContent: "1. Choisissez votre service (Retrait ou Transfert).\n2. Sélectionnez l'opérateur concerné.\n3. Remplissez les informations demandées.\n4. Cliquez sur confirmer pour lancer l'appel USSD.\n5. Validez avec votre code secret sur votre téléphone.",
-        whatsappContact: "Contact WhatsApp : +261 34 00 000 00"
+        whatsappContact: "Contact WhatsApp : +261 34 83 617 22"
       }
     }
   },
@@ -185,7 +185,7 @@ const resources = {
         on: "On",
         off: "Off",
         helpContent: "1. Choose your service (Withdrawal or Transfer).\n2. Select the relevant operator.\n3. Fill in the requested information.\n4. Click confirm to launch the USSD call.\n5. Validate with your secret code on your phone.",
-        whatsappContact: "WhatsApp Contact: +261 34 00 000 00"
+        whatsappContact: "WhatsApp Contact: +261 34 83 617 22"
       }
     }
   }
