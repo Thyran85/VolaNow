@@ -8,20 +8,33 @@ import { useVibration } from "@/context/VibrationContext";
 import { createStyles } from "@/styles/index.styles";
 
 export default function Index() {
-  const { theme, isDark } = useAppTheme();
+  const { theme, isDark, setMode } = useAppTheme();
   const { t } = useTranslation();
   const { triggerVibration } = useVibration();
   const styles = createStyles(theme);
   const router = useRouter();
 
+  const toggleTheme = () => {
+    triggerVibration('light');
+    setMode(isDark ? 'light' : 'dark');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Image 
-          source={isDark ? require('@/assets/images/logo_VolaNow/Logo_Dark.png') : require('@/assets/images/logo_VolaNow/Logo_Light.png')} 
-          style={styles.logoHeader} 
-          resizeMode="contain"
-        />
+        <View style={styles.headerTop}>
+          <Image 
+            source={isDark ? require('@/assets/images/logo_VolaNow/Logo_Dark.png') : require('@/assets/images/logo_VolaNow/Logo_Light.png')} 
+            style={styles.logoHeader} 
+            resizeMode="contain"
+          />
+          <TouchableOpacity 
+            style={[styles.themeToggle, { backgroundColor: isDark ? '#FFF1' : '#0001' }]} 
+            onPress={toggleTheme}
+          >
+            <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={20} color={theme.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -37,7 +50,6 @@ export default function Index() {
             <View style={[styles.actionIcon, { backgroundColor: isDark ? '#CCFF0015' : '#B0FC5133' }]}>
               <Ionicons name="arrow-down-circle" size={24} color={theme.tintDark} />
             </View>
-            <Text style={styles.serviceTag}>{t('home.service01')}</Text>
           </View>
           <Text style={styles.cardTitle}>{t('home.withdrawalTitle')}</Text>
           <Text style={styles.cardDesc}>{t('home.withdrawalDesc')}</Text>
@@ -59,7 +71,6 @@ export default function Index() {
             <View style={[styles.actionIcon, { backgroundColor: isDark ? '#B0FC5115' : '#86D12E33' }]}>
               <Ionicons name="repeat" size={24} color={theme.tintDark} />
             </View>
-            <Text style={styles.serviceTag}>{t('home.service02')}</Text>
           </View>
           <Text style={styles.cardTitle}>{t('home.transferTitle')}</Text>
           <Text style={styles.cardDesc}>{t('home.transferDesc')}</Text>
@@ -81,7 +92,6 @@ export default function Index() {
             <View style={[styles.actionIcon, { backgroundColor: isDark ? '#00E5FF15' : '#00E5FF33' }]}>
               <Ionicons name="barcode-outline" size={24} color={theme.tintDark} />
             </View>
-            <Text style={styles.serviceTag}>{t('home.service03')}</Text>
           </View>
           <Text style={styles.cardTitle}>{t('home.rechargeTitle')}</Text>
           <Text style={styles.cardDesc}>{t('home.rechargeDesc')}</Text>

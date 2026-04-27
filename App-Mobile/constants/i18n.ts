@@ -193,7 +193,7 @@ const resources = {
 
 const LANG_STORAGE_KEY = '@app_language';
 
-const initI18n = async () => {
+export const initI18n = async () => {
   let savedLanguage = await AsyncStorage.getItem(LANG_STORAGE_KEY);
   
   if (!savedLanguage) {
@@ -201,9 +201,10 @@ const initI18n = async () => {
     savedLanguage = systemLocale === 'fr' ? 'fr' : 'en';
   }
 
-  i18n
+  await i18n
     .use(initReactI18next)
     .init({
+      compatibilityJSON: 'v4',
       resources,
       lng: savedLanguage,
       fallbackLng: 'fr',
@@ -212,7 +213,5 @@ const initI18n = async () => {
       },
     });
 };
-
-initI18n();
 
 export default i18n;

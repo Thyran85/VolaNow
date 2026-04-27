@@ -11,7 +11,12 @@ import { ThemeProvider as AppThemeProvider } from '@/context/ThemeContext';
 import { VibrationProvider } from '@/context/VibrationContext';
 import { Camera } from 'expo-camera';
 import { requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
-import '@/constants/i18n';
+import { initI18n } from '@/constants/i18n';
+import * as SplashScreen from 'expo-splash-screen';
+import { useState } from 'react';
+
+// Empêcher le splash screen de se masquer automatiquement
+SplashScreen.preventAutoHideAsync();
 
 // Ancre de démarrage : l'app s'ouvre sur le groupe (home)
 export const unstable_settings = {
@@ -20,12 +25,16 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const requestPermissions = async () => {
-      // 1. Permission Appels (Android uniquement)
-      if (Platform.OS === 'android') {
-        try {
+    const prepare = async () => {
+      try {
+        // 1. Initialiser les traductions
+        await initI18n();
+
+        // 2. Permission Appels (Android uniquement)
+        if (Platform.OS === 'android') {
           await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.CALL_PHONE,
             {
@@ -36,22 +45,24 @@ export default function RootLayout() {
               buttonPositive: "OK"
             }
           );
-        } catch (err) {
-          console.warn(err);
         }
-      }
 
-      // 2. Permission Caméra & Galerie (iOS et Android)
-      try {
+        // 3. Permission Caméra & Galerie (iOS et Android)
         await Camera.requestCameraPermissionsAsync();
         await requestMediaLibraryPermissionsAsync();
+
       } catch (err) {
-        console.warn("Permission camera/gallery error:", err);
+        console.warn("Preparation error:", err);
+      } finally {
+        setIsLoaded(true);
+        await SplashScreen.hideAsync();
       }
     };
     
-    requestPermissions();
+    prepare();
   }, []);
+
+  if (!isLoaded) return null;
 
   return (
     <VibrationProvider>

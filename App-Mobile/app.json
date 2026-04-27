@@ -1,12 +1,18 @@
 {
   "expo": {
     "name": "VolaNow",
-    "slug": "App_mobile",
+    "slug": "volanow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo_VolaNow/Icon_Volanao.png",
     "scheme": "appmobile",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/23f397f5-7894-46cd-9dd7-32669d29cf14"
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -18,9 +24,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CALL_PHONE",
-        "android.permission.CALL_PHONE"
+        "android.permission.CAMERA"
       ],
-      "package": "com.anonymous.App_mobile"
+      "package": "com.volanow.app"
     },
     "web": {
       "output": "static"
@@ -60,7 +66,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "853e8f8c-a48c-43cc-a6eb-d499726fb075"
+        "projectId": "23f397f5-7894-46cd-9dd7-32669d29cf14"
       }
     }
   }

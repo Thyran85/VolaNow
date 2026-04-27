@@ -10,10 +10,22 @@ export const createStyles = (theme: any) => StyleSheet.create({
     paddingTop: 40,
     marginBottom: 10,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   logoHeader: {
     width: 180,
     height: 45,
     marginLeft: -10,
+  },
+  themeToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     padding: 20,
@@ -39,12 +51,6 @@ export const createStyles = (theme: any) => StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  serviceTag: {
-    color: theme.textSecondary,
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1,
   },
   cardTitle: {
     color: theme.text,
