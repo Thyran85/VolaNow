@@ -26,7 +26,7 @@ export default function TransferPage() {
   const [amount, setAmount] = useState("");
 
   const operators: { id: OperatorId, name: string, color: string }[] = [
-    { id: "mvola", name: "MVola", color: "#E60000" },
+    { id: "mvola", name: "MVola", color: "#e6e200ff" },
     { id: "orange", name: "Orange", color: "#FF7900" },
     { id: "airtel", name: "Airtel", color: "#ED1C24" },
   ];
