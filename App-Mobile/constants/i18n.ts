@@ -193,25 +193,35 @@ const resources = {
 
 const LANG_STORAGE_KEY = '@app_language';
 
-export const initI18n = async () => {
-  let savedLanguage = await AsyncStorage.getItem(LANG_STORAGE_KEY);
-  
-  if (!savedLanguage) {
-    const systemLocale = Localization.getLocales()[0].languageCode;
-    savedLanguage = systemLocale === 'fr' ? 'fr' : 'en';
-  }
+// 1. Initialisation synchrone avec le français par défaut
+i18n
+  .use(initReactI18next)
+  .init({
+    compatibilityJSON: 'v4',
+    resources,
+    lng: 'fr', // Langue par défaut immédiate
+    fallbackLng: 'fr',
+    interpolation: {
+      escapeValue: false,
+    },
+  });
 
-  await i18n
-    .use(initReactI18next)
-    .init({
-      compatibilityJSON: 'v4',
-      resources,
-      lng: savedLanguage,
-      fallbackLng: 'fr',
-      interpolation: {
-        escapeValue: false,
-      },
-    });
+// 2. Fonction asynchrone pour charger la préférence utilisateur
+export const initI18n = async () => {
+  try {
+    let savedLanguage = await AsyncStorage.getItem(LANG_STORAGE_KEY);
+    
+    if (!savedLanguage) {
+      const systemLocale = Localization.getLocales()[0]?.languageCode;
+      savedLanguage = systemLocale === 'fr' ? 'fr' : 'en';
+    }
+
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      await i18n.changeLanguage(savedLanguage);
+    }
+  } catch (error) {
+    console.error("Erreur de chargement de la langue:", error);
+  }
 };
 
 export default i18n;

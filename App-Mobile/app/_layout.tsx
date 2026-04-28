@@ -13,6 +13,7 @@ import { Camera } from 'expo-camera';
 import { requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
 import { initI18n } from '@/constants/i18n';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
 import { useState } from 'react';
 
 // Empêcher le splash screen de se masquer automatiquement
@@ -30,6 +31,15 @@ export default function RootLayout() {
   useEffect(() => {
     const prepare = async () => {
       try {
+        // 0. Vérifier les mises à jour (uniquement en dehors du développement)
+        if (!__DEV__) {
+          const update = await Updates.checkForUpdateAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          }
+        }
+
         // 1. Initialiser les traductions
         await initI18n();
 
