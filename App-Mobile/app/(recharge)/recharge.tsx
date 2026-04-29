@@ -28,6 +28,7 @@ export default function RechargePage() {
   const [detectedOp, setDetectedOp] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [transactionDone, setTransactionDone] = useState(false);
 
   // Calcul dynamique du cadre de scan
   const FRAME_WIDTH = width * 0.75; 
@@ -73,9 +74,37 @@ export default function RechargePage() {
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* 1. ARRIÈRE-PLAN (IMAGE OU CAMÉRA) */}
+      {/* 1. ARRIÈRE-PLAN (IMAGE OU CAMÉRA OU SUCCÈS) */}
       <View style={styles.cameraLayer}>
-        {imageUri ? (
+        {transactionDone ? (
+          <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 20 }}>
+            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#CCFF0030', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="checkmark-circle" size={56} color="#86D12E" />
+            </View>
+            <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>Recharge envoyée !</Text>
+            <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 14 }}>
+              L'appel USSD a été lancé avec succès.{`\n`}Vérifiez votre solde dans quelques instants.
+            </Text>
+            <TouchableOpacity
+              style={[styles.mainButton, { backgroundColor: theme.tint, marginTop: 12, width: '100%' }]}
+              onPress={() => {
+                triggerVibration('light');
+                setDetectedOp(null);
+                setImageUri(null);
+                setTransactionDone(false);
+              }}
+            >
+              <Ionicons name="refresh-outline" size={22} color="#000" />
+              <Text style={styles.mainButtonText}>Scanner un autre code</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.mainButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, width: '100%' }]}
+              onPress={() => { triggerVibration('light'); router.back(); }}
+            >
+              <Text style={[styles.mainButtonText, { color: theme.text }]}>Retour accueil</Text>
+            </TouchableOpacity>
+          </View>
+        ) : imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.fullPreviewImage} resizeMode="cover" />
         ) : (
           <CameraView style={styles.camera} facing="back" />
@@ -113,63 +142,65 @@ export default function RechargePage() {
           </View>
         </View>
 
-        {/* FOOTER FIXE EN BAS */}
-        <View style={[styles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={styles.footerInner}>
-            <View style={styles.statusBox}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>{t('recharge.title').toUpperCase()}</Text>
-              <Text style={[styles.status, { color: theme.text }]} numberOfLines={1}>
-                {loading ? t('recharge.analyzing') : detectedOp ? t('recharge.codeReady') : t('recharge.placeCard')}
-              </Text>
-            </View>
-            
-            <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
-              <View style={[styles.progressFill, { 
-                width: loading ? '70%' : detectedOp ? '100%' : '5%', 
-                backgroundColor: detectedOp ? detectedOp.color : theme.tint 
-              }]} />
-            </View>
-
-            <View style={styles.actionRow}>
-              {detectedOp ? (
-                <TouchableOpacity 
-                  style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
-                  onPress={() => {
-                    triggerVibration('light');
-                    setDetectedOp(null);
-                    setImageUri(null);
-                  }}
-                >
-                  <Ionicons name="refresh-outline" size={26} color={theme.text} />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity 
-                  style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
-                  onPress={pickImage}
-                >
-                  <Ionicons name="images-outline" size={26} color={theme.text} />
-                </TouchableOpacity>
-              )}
+        {!transactionDone && (
+          <View style={[styles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={styles.footerInner}>
+              <View style={styles.statusBox}>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>{t('recharge.title').toUpperCase()}</Text>
+                <Text style={[styles.status, { color: theme.text }]} numberOfLines={1}>
+                  {loading ? t('recharge.analyzing') : detectedOp ? t('recharge.codeReady') : t('recharge.placeCard')}
+                </Text>
+              </View>
               
-              <TouchableOpacity 
-                  style={[styles.mainButton, { backgroundColor: detectedOp ? detectedOp.color : theme.tint }]} 
-                  onPress={() => {
-                      if (!detectedOp) {
-                          runAIAnalysis('orange');
-                      } else {
-                          triggerVibration('success');
-                          const rechargeCode = "123456789012"; 
-                          const ussdString = `tel:${detectedOp.prefix}${rechargeCode}#`;
-                          Linking.openURL(ussdString);
-                      }
-                  }}
-              >
-                {loading ? <ActivityIndicator color="#000" size="small" /> : <Ionicons name={detectedOp ? "call" : "scan-outline"} size={22} color="#000" />}
-                <Text style={styles.mainButtonText}>{loading ? "" : detectedOp ? t('recharge.rechargeBtn') : t('recharge.detectBtn')}</Text>
-              </TouchableOpacity>
+              <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
+                <View style={[styles.progressFill, { 
+                  width: loading ? '70%' : detectedOp ? '100%' : '5%', 
+                  backgroundColor: detectedOp ? detectedOp.color : theme.tint 
+                }]} />
+              </View>
+
+              <View style={styles.actionRow}>
+                {detectedOp ? (
+                  <TouchableOpacity 
+                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
+                    onPress={() => {
+                      triggerVibration('light');
+                      setDetectedOp(null);
+                      setImageUri(null);
+                    }}
+                  >
+                    <Ionicons name="refresh-outline" size={26} color={theme.text} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity 
+                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
+                    onPress={pickImage}
+                  >
+                    <Ionicons name="images-outline" size={26} color={theme.text} />
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity 
+                    style={[styles.mainButton, { backgroundColor: detectedOp ? detectedOp.color : theme.tint }]} 
+                    onPress={() => {
+                        if (!detectedOp) {
+                            runAIAnalysis('orange');
+                        } else {
+                            triggerVibration('success');
+                            const rechargeCode = "123456789012"; 
+                            const ussdString = `tel:${detectedOp.prefix}${rechargeCode}#`;
+                            Linking.openURL(ussdString);
+                            setTransactionDone(true);
+                        }
+                    }}
+                >
+                  {loading ? <ActivityIndicator color="#000" size="small" /> : <Ionicons name={detectedOp ? "call" : "scan-outline"} size={22} color="#000" />}
+                  <Text style={styles.mainButtonText}>{loading ? "" : detectedOp ? t('recharge.rechargeBtn') : t('recharge.detectBtn')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
       </SafeAreaView>
     </View>

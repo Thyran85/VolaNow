@@ -23,6 +23,7 @@ export default function WithdrawalPage() {
   const [cashPoint, setCashPoint] = useState('');
   const [amount, setAmount] = useState('');
   const [operator, setOperator] = useState<OperatorId>('mvola');
+  const [transactionDone, setTransactionDone] = useState(false);
 
   const operators: { id: OperatorId, name: string, color: string }[] = [
     { id: 'mvola', name: 'MVola', color: '#e6e200ff' }, //#e6e200ff  004de6ff
@@ -58,6 +59,7 @@ export default function WithdrawalPage() {
         target: cashPoint,
         operator,
       });
+      setTransactionDone(true);
 
     } catch (error) {
       triggerVibration('error');
@@ -74,8 +76,37 @@ export default function WithdrawalPage() {
         <Text style={styles.headerTitle}>{t('withdrawal.title')}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>{t('withdrawal.step1')}</Text>
+      {transactionDone ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 20 }}>
+          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#CCFF0030', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="checkmark-circle" size={56} color="#86D12E" />
+          </View>
+          <Text style={[styles.headerTitle, { textAlign: 'center' }]}>Transaction envoyée !</Text>
+          <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 14 }}>
+            Montant : {parseInt(amount).toLocaleString()} {t('common.ar')}{`\n`}Point de retrait : {cashPoint}
+          </Text>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: theme.tint, marginTop: 12 }]}
+            onPress={() => {
+              triggerVibration('light');
+              setCashPoint('');
+              setAmount('');
+              setOperator('mvola');
+              setTransactionDone(false);
+            }}
+          >
+            <Text style={styles.actionButtonText}>Nouvelle transaction</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }]}
+            onPress={() => { triggerVibration('light'); router.back(); }}
+          >
+            <Text style={[styles.actionButtonText, { color: theme.text }]}>Retour accueil</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.sectionTitle}>{t('withdrawal.step1')}</Text>
         <View style={styles.operatorGrid}>
           {operators.map((op) => (
             <TouchableOpacity
@@ -152,7 +183,8 @@ export default function WithdrawalPage() {
         <Text style={styles.helperText}>
           {t('withdrawal.helper')}
         </Text>
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
