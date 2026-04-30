@@ -26,7 +26,7 @@ export default function WithdrawalPage() {
   const [transactionDone, setTransactionDone] = useState(false);
 
   const operators: { id: OperatorId, name: string, color: string }[] = [
-    { id: 'mvola', name: 'MVola', color: '#e6e200ff' }, //#e6e200ff  004de6ff
+    { id: 'mvola', name: 'MVola', color: '#e6e200ff' }, 
     { id: 'orange', name: 'Orange', color: '#FF7900' },
     { id: 'airtel', name: 'Airtel', color: '#ED1C24' },
   ];
