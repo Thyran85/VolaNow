@@ -241,7 +241,7 @@ export default function SettingsPage() {
 
             <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
               <Text style={styles.aboutDescription}>
-                VolaNow est une application conçue pour simplifier vos transactions USSD quotidiennes à Madagascar, sans avoir besoin de connexion internet.
+                {t('settings.aboutDescription')}
               </Text>
 
               {developers.map((dev) => (

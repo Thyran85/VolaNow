@@ -21,6 +21,12 @@ const resources = {
         success: "Succès",
         delete: "Supprimer",
         deleteAll: "Tout effacer",
+        successSent: "Transaction envoyée !",
+        newTransaction: "Nouvelle transaction",
+        backHome: "Retour accueil",
+        amountLabel: "Montant :",
+        recipientLabel: "Destinataire :",
+        cashPointLabel: "Point de retrait :",
       },
       home: {
         title: "Services USSD",
@@ -47,6 +53,9 @@ const resources = {
         scan: "SCANNER",
         retry: "Réessayer",
         permissionError: "Permission caméra requise",
+        successSent: "Recharge envoyée !",
+        successHelp: "L'appel USSD a été lancé avec succès.\nVérifiez votre solde dans quelques instants.",
+        scanAnother: "Scanner un autre code",
       },
       withdrawal: {
         title: "Retrait d'argent",
@@ -97,7 +106,8 @@ const resources = {
         on: "Activé",
         off: "Désactivé",
         helpContent: "1. Choisissez votre service (Retrait ou Transfert).\n2. Sélectionnez l'opérateur concerné.\n3. Remplissez les informations demandées.\n4. Cliquez sur confirmer pour lancer l'appel USSD.\n5. Validez avec votre code secret sur votre téléphone.",
-        whatsappContact: "Contact WhatsApp : +261 34 83 617 22"
+        whatsappContact: "Contact WhatsApp : +261 34 83 617 22",
+        aboutDescription: "VolaNow est une application conçue pour simplifier vos transactions USSD quotidiennes à Madagascar, sans avoir besoin de connexion internet.",
       }
     }
   },
@@ -118,6 +128,12 @@ const resources = {
         success: "Success",
         delete: "Delete",
         deleteAll: "Clear all",
+        successSent: "Transaction sent!",
+        newTransaction: "New transaction",
+        backHome: "Back home",
+        amountLabel: "Amount:",
+        recipientLabel: "Recipient:",
+        cashPointLabel: "Cash point:",
       },
       home: {
         title: "USSD Services",
@@ -143,6 +159,9 @@ const resources = {
         detectBtn: "DETECT",
         scan: "SCANNER",
         permissionError: "Camera permission required",
+        successSent: "Recharge sent!",
+        successHelp: "The USSD call was successfully launched.\nCheck your balance in a few moments.",
+        scanAnother: "Scan another code",
       },
       withdrawal: {
         title: "Money Withdrawal",
@@ -193,7 +212,8 @@ const resources = {
         on: "On",
         off: "Off",
         helpContent: "1. Choose your service (Withdrawal or Transfer).\n2. Select the relevant operator.\n3. Fill in the requested information.\n4. Click confirm to launch the USSD call.\n5. Validate with your secret code on your phone.",
-        whatsappContact: "WhatsApp Contact: +261 34 83 617 22"
+        whatsappContact: "WhatsApp Contact: +261 34 83 617 22",
+        aboutDescription: "VolaNow is an application designed to simplify your daily USSD transactions in Madagascar, without the need for an internet connection.",
       }
     }
   }

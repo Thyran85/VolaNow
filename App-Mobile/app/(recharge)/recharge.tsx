@@ -81,9 +81,9 @@ export default function RechargePage() {
             <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#CCFF0030', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="checkmark-circle" size={56} color="#86D12E" />
             </View>
-            <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>Recharge envoyée !</Text>
+            <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>{t('recharge.successSent')}</Text>
             <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 14 }}>
-              L'appel USSD a été lancé avec succès.{`\n`}Vérifiez votre solde dans quelques instants.
+              {t('recharge.successHelp')}
             </Text>
             <TouchableOpacity
               style={[styles.mainButton, { backgroundColor: theme.tint, marginTop: 12, width: '100%' }]}
@@ -95,13 +95,13 @@ export default function RechargePage() {
               }}
             >
               <Ionicons name="refresh-outline" size={22} color="#000" />
-              <Text style={styles.mainButtonText}>Scanner un autre code</Text>
+              <Text style={styles.mainButtonText}>{t('recharge.scanAnother')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.mainButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, width: '100%' }]}
               onPress={() => { triggerVibration('light'); router.back(); }}
             >
-              <Text style={[styles.mainButtonText, { color: theme.text }]}>Retour accueil</Text>
+              <Text style={[styles.mainButtonText, { color: theme.text }]}>{t('common.backHome')}</Text>
             </TouchableOpacity>
           </View>
         ) : imageUri ? (
