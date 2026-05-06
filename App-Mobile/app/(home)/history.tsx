@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, FlatList, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useHistory, HistoryItem } from '@/context/HistoryContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useVibration } from '@/context/VibrationContext';
 import { createStyles } from '@/styles/history.styles';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function HistoryPage() {
   const { history, removeHistoryItem, clearHistory } = useHistory();
@@ -13,6 +14,10 @@ export default function HistoryPage() {
   const { triggerVibration } = useVibration();
   const { t, i18n } = useTranslation();
   const styles = createStyles(theme);
+
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [clearModalVisible, setClearModalVisible] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -26,26 +31,28 @@ export default function HistoryPage() {
 
   const handleDeleteItem = (id: string) => {
     triggerVibration('warning');
-    Alert.alert(
-      t('common.confirm'),
-      t('history.confirmDeleteOne'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: () => removeHistoryItem(id) }
-      ]
-    );
+    setSelectedItemId(id);
+    setDeleteModalVisible(true);
   };
 
   const handleClearHistory = () => {
     triggerVibration('warning');
-    Alert.alert(
-      t('common.confirm'),
-      t('history.confirmDeleteAll'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.deleteAll'), style: 'destructive', onPress: () => clearHistory() }
-      ]
-    );
+    setClearModalVisible(true);
+  };
+
+  const confirmDeleteOne = () => {
+    if (selectedItemId) {
+      removeHistoryItem(selectedItemId);
+      setDeleteModalVisible(false);
+      setSelectedItemId(null);
+      triggerVibration('light');
+    }
+  };
+
+  const confirmDeleteAll = () => {
+    clearHistory();
+    setClearModalVisible(false);
+    triggerVibration('light');
   };
 
   const renderItem = ({ item }: { item: HistoryItem }) => (
@@ -118,6 +125,25 @@ export default function HistoryPage() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title={t('common.confirm')}
+        message={t('history.confirmDeleteOne')}
+        onConfirm={confirmDeleteOne}
+        onCancel={() => setDeleteModalVisible(false)}
+        theme={theme}
+      />
+
+      <ConfirmModal
+        visible={clearModalVisible}
+        title={t('common.confirm')}
+        message={t('history.confirmDeleteAll')}
+        onConfirm={confirmDeleteAll}
+        onCancel={() => setClearModalVisible(false)}
+        theme={theme}
+        confirmText={t('common.deleteAll')}
+      />
     </SafeAreaView>
   );
 }
