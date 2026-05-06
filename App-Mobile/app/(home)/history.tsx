@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useHistory, HistoryItem } from '@/context/HistoryContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { useVibration } from '@/context/VibrationContext';
 import { createStyles } from '@/styles/history.styles';
 
 export default function HistoryPage() {
-  const { history, clearHistory } = useHistory();
+  const { history, removeHistoryItem, clearHistory } = useHistory();
   const { theme, isDark } = useAppTheme();
+  const { triggerVibration } = useVibration();
   const { t, i18n } = useTranslation();
   const styles = createStyles(theme);
 
@@ -20,6 +22,30 @@ export default function HistoryPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleDeleteItem = (id: string) => {
+    triggerVibration('warning');
+    Alert.alert(
+      t('common.confirm'),
+      t('history.confirmDeleteOne'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => removeHistoryItem(id) }
+      ]
+    );
+  };
+
+  const handleClearHistory = () => {
+    triggerVibration('warning');
+    Alert.alert(
+      t('common.confirm'),
+      t('history.confirmDeleteAll'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.deleteAll'), style: 'destructive', onPress: () => clearHistory() }
+      ]
+    );
   };
 
   const renderItem = ({ item }: { item: HistoryItem }) => (
@@ -48,6 +74,12 @@ export default function HistoryPage() {
         <Text style={[styles.operatorText, { color: getOperatorColor(item.operator) }]}>
           {item.operator.toUpperCase()}
         </Text>
+        <TouchableOpacity 
+          onPress={() => handleDeleteItem(item.id)}
+          style={{ padding: 4, marginTop: 4, alignSelf: 'flex-end' }}
+        >
+          <Feather name="trash-2" size={16} color="#FF3B30" opacity={0.6} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -66,7 +98,7 @@ export default function HistoryPage() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('history.title')}</Text>
         {history.length > 0 && (
-          <TouchableOpacity onPress={clearHistory}>
+          <TouchableOpacity onPress={handleClearHistory}>
             <Text style={styles.clearText}>{t('history.clear')}</Text>
           </TouchableOpacity>
         )}

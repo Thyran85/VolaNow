@@ -15,6 +15,7 @@ export interface HistoryItem {
 interface HistoryContextType {
   history: HistoryItem[];
   addHistoryItem: (item: Omit<HistoryItem, 'id' | 'date'>) => void;
+  removeHistoryItem: (id: string) => void;
   clearHistory: () => void;
   isLoading: boolean;
 }
@@ -76,8 +77,12 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setHistory([]);
   };
 
+  const removeHistoryItem = (id: string) => {
+    setHistory((prev) => prev.filter((item) => item.id !== id));
+  };
+
   return (
-    <HistoryContext.Provider value={{ history, addHistoryItem, clearHistory, isLoading }}>
+    <HistoryContext.Provider value={{ history, addHistoryItem, removeHistoryItem, clearHistory, isLoading }}>
       {children}
     </HistoryContext.Provider>
   );

@@ -19,6 +19,8 @@ const resources = {
         ar: "Ar",
         error: "Erreur",
         success: "Succès",
+        delete: "Supprimer",
+        deleteAll: "Tout effacer",
       },
       home: {
         title: "Services USSD",
@@ -77,6 +79,8 @@ const resources = {
         transfer: "Transfert d'argent",
         targetWithdrawal: "Point de retrait: ",
         targetTransfer: "Destinataire: ",
+        confirmDeleteOne: "Voulez-vous supprimer cette transaction ?",
+        confirmDeleteAll: "Voulez-vous effacer tout l'historique ?",
       },
       settings: {
         title: "Paramètres",
@@ -112,6 +116,8 @@ const resources = {
         ar: "Ar",
         error: "Error",
         success: "Success",
+        delete: "Delete",
+        deleteAll: "Clear all",
       },
       home: {
         title: "USSD Services",
@@ -169,6 +175,8 @@ const resources = {
         transfer: "Money Transfer",
         targetWithdrawal: "Cash Point: ",
         targetTransfer: "Recipient: ",
+        confirmDeleteOne: "Do you want to delete this transaction?",
+        confirmDeleteAll: "Do you want to clear the entire history?",
       },
       settings: {
         title: "Settings",
