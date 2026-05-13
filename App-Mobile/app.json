@@ -64,7 +64,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-ocr-kit"
     ],
     "experiments": {
       "typedRoutes": true,

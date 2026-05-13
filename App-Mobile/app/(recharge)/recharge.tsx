@@ -1,104 +1,241 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, View, Text, TouchableOpacity, Image, 
-  Linking, StatusBar, ActivityIndicator, useWindowDimensions, Platform 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet, View, Text, TouchableOpacity, Image, Linking,
+  ActivityIndicator, useWindowDimensions, Platform, Alert, Animated
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Stack } from 'expo-router'; 
+import { useRouter, Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useVibration } from '@/context/VibrationContext';
 import { useAppTheme } from '@/context/ThemeContext';
 
+// ─── Opérateurs avec format USSD correct ─────────────────────────────────────
+// Telma  → #321*CODE#
+// Orange → *123*CODE#
+// Airtel → #130*CODE#
 const OPERATORS = {
-  telma: { name: 'Telma / Yas', color: '#CCFF00', prefix: '*321*', logo: require('../../assets/images/logo/yas_logo.png') },
-  orange: { name: 'Orange', color: '#FF7900', prefix: '*141*', logo: require('../../assets/images/logo/orange_logo.png') },
-  airtel: { name: 'Airtel', color: '#ED1C24', prefix: '*130*', logo: require('../../assets/images/logo/airtel_logo.png') }
+  telma: {
+    name: 'Telma / Yas',
+    color: '#CCFF00',
+    ussd: (code: string) => `#321*${code}#`,
+    logo: require('../../assets/images/logo/yas_logo.png'),
+  },
+  orange: {
+    name: 'Orange',
+    color: '#FF7900',
+    ussd: (code: string) => `*123*${code}#`,
+    logo: require('../../assets/images/logo/orange_logo.png'),
+  },
+  airtel: {
+    name: 'Airtel',
+    color: '#ED1C24',
+    ussd: (code: string) => `#130*${code}#`,
+    logo: require('../../assets/images/logo/airtel_logo.png'),
+  },
 };
+
+const PROGRESS_STEPS = [
+  { label: "Chargement de l'image...", target: 0.2,  duration: 400 },
+  { label: 'Analyse en cours...',      target: 0.5,  duration: 700 },
+  { label: 'Extraction du code...',    target: 0.8,  duration: 600 },
+  { label: 'Finalisation...',          target: 0.95, duration: 400 },
+];
 
 export default function RechargePage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
   const { triggerVibration } = useVibration();
-  const { width, height } = useWindowDimensions();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [detectedOp, setDetectedOp] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [transactionDone, setTransactionDone] = useState(false);
+  const { width } = useWindowDimensions();
 
-  // Calcul dynamique du cadre de scan
-  const FRAME_WIDTH = width * 0.75; 
+  const [permission, requestPermission] = useCameraPermissions();
+  const [detectedOp, setDetectedOp]           = useState<any>(null);
+  const [loading, setLoading]                 = useState(false);
+  const [statusLabel, setStatusLabel]         = useState('Placez la carte dans le cadre');
+  const [imageUri, setImageUri]               = useState<string | null>(null);
+  const [transactionDone, setTransactionDone] = useState(false);
+  const [detectedCode, setDetectedCode]       = useState<string | null>(null);
+  const [ussdCode, setUssdCode]               = useState<string | null>(null);
+
+  const progressAnim = useRef(new Animated.Value(0.05)).current;
+
+  const FRAME_WIDTH  = width * 0.75;
   const FRAME_HEIGHT = FRAME_WIDTH * 0.58;
 
-  useEffect(() => { 
-    if (!permission) requestPermission(); 
+  useEffect(() => {
+    if (!permission) requestPermission();
   }, [permission]);
 
-  const runAIAnalysis = (type: keyof typeof OPERATORS) => {
-    setLoading(true);
-    triggerVibration('light');
-    setTimeout(() => {
-      setDetectedOp(OPERATORS[type]);
-      setLoading(false);
-      triggerVibration('success');
-    }, 1500);
+  // ── Progress ──────────────────────────────────────────────────────────────
+  const animateTo = (target: number, duration: number) =>
+    new Promise<void>(resolve =>
+      Animated.timing(progressAnim, {
+        toValue: target,
+        duration,
+        useNativeDriver: false,
+      }).start(() => resolve())
+    );
+
+  const resetProgress = () => {
+    progressAnim.setValue(0.05);
+    setStatusLabel('Placez la carte dans le cadre');
   };
 
+  // ── OCR (simulée — remplace par ML Kit en bare workflow) ──────────────────
+  const runOCRAnalysis = async (uri: string) => {
+    setLoading(true);
+    triggerVibration('light');
+
+    try {
+      for (const step of PROGRESS_STEPS) {
+        setStatusLabel(step.label);
+        await animateTo(step.target, step.duration);
+      }
+
+      // ── TODO : remplace par ton vrai OCR ─────────────────────────────────
+      // import TextRecognition from '@react-native-ml-kit/text-recognition';
+      // const result = await TextRecognition.recognize(uri);
+      // const fullText = result.text;
+      const fullText = 'TELMA 3402 5870 7968 76'; // ← simulation
+      // ─────────────────────────────────────────────────────────────────────
+
+      // Extraction du code (12-16 chiffres consécutifs)
+      const cleaned   = fullText.replace(/[\s\-]/g, '');
+      const codeMatch = cleaned.match(/(\d{12,16})/);
+      const code      = codeMatch ? codeMatch[1] : null;
+
+      if (!code) {
+        await animateTo(1, 200);
+        Alert.alert('Code non détecté', 'Veuillez bien centrer la carte et réessayer.');
+        resetProgress();
+        return;
+      }
+
+      // Détection opérateur
+      const upper = fullText.toUpperCase();
+      let operatorKey: keyof typeof OPERATORS = 'telma';
+      if (upper.includes('ORANGE'))      operatorKey = 'orange';
+      else if (upper.includes('AIRTEL')) operatorKey = 'airtel';
+
+      const op = OPERATORS[operatorKey];
+
+      // Construction du code USSD avec le bon format selon l'opérateur
+      // Telma  → #321*34025870796876#
+      // Orange → *123*34025870796876#
+      // Airtel → #130*34025870796876#
+      const formatted = op.ussd(code);
+
+      setDetectedCode(code);
+      setDetectedOp(op);
+      setUssdCode(formatted);
+
+      setStatusLabel('Code détecté ✓');
+      await animateTo(1, 300);
+      triggerVibration('success');
+
+    } catch (error) {
+      console.error('OCR Error:', error);
+      resetProgress();
+      Alert.alert("Erreur d'analyse", 'Impossible de lire la carte.\nRéessayez avec une meilleure lumière.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Galerie ───────────────────────────────────────────────────────────────
   const pickImage = async () => {
     triggerVibration('light');
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
     if (status !== 'granted') {
-        triggerVibration('error');
-        alert(t('recharge.permissionError'));
-        return;
+      triggerVibration('error');
+      Alert.alert('Permission refusée', "L'accès à la galerie est requis.");
+      return;
     }
-    let result = await ImagePicker.launchImageLibraryAsync({
+
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 1,
     });
+
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-      runAIAnalysis('telma'); 
+      const uri = result.assets[0].uri;
+      setImageUri(uri);
+      await runOCRAnalysis(uri);
     }
   };
 
-  if (!permission || !permission.granted) return <View style={[styles.container, { backgroundColor: theme.background }]} />;
+  // ── Lancement USSD au tap sur le code ────────────────────────────────────
+  const handleUssdPress = () => {
+    if (!ussdCode || !detectedOp) return;
+    triggerVibration('success');
+    Linking.openURL(`tel:${ussdCode}`);
+    setTransactionDone(true);
+  };
+
+  // ── Reset complet ─────────────────────────────────────────────────────────
+  const handleReset = () => {
+    triggerVibration('light');
+    setDetectedOp(null);
+    setImageUri(null);
+    setDetectedCode(null);
+    setUssdCode(null);
+    setTransactionDone(false);
+    resetProgress();
+  };
+
+  if (!permission || !permission.granted) {
+    return <View style={[styles.container, { backgroundColor: theme.background }]} />;
+  }
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+  const progressColor = detectedOp ? detectedOp.color : theme.tint;
 
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
-      {/* 1. ARRIÈRE-PLAN (IMAGE OU CAMÉRA OU SUCCÈS) */}
+
+      {/* 1. ARRIÈRE-PLAN */}
       <View style={styles.cameraLayer}>
         {transactionDone ? (
-          <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 20 }}>
-            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#CCFF0030', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{
+            flex: 1, backgroundColor: theme.background,
+            justifyContent: 'center', alignItems: 'center', padding: 24, gap: 20,
+          }}>
+            <View style={{
+              width: 80, height: 80, borderRadius: 40,
+              backgroundColor: '#CCFF0030', alignItems: 'center', justifyContent: 'center',
+            }}>
               <Ionicons name="checkmark-circle" size={56} color="#86D12E" />
             </View>
+
             <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>{t('recharge.successSent')}</Text>
+
+            <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>
+              Recharge envoyée !
+            </Text>
             <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 14 }}>
               {t('recharge.successHelp')}
             </Text>
             <TouchableOpacity
               style={[styles.mainButton, { backgroundColor: theme.tint, marginTop: 12, width: '100%' }]}
-              onPress={() => {
-                triggerVibration('light');
-                setDetectedOp(null);
-                setImageUri(null);
-                setTransactionDone(false);
-              }}
+              onPress={handleReset}
             >
               <Ionicons name="refresh-outline" size={22} color="#000" />
               <Text style={styles.mainButtonText}>{t('recharge.scanAnother')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.mainButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, width: '100%' }]}
+              style={[styles.mainButton, {
+                backgroundColor: theme.surface, borderWidth: 1,
+                borderColor: theme.border, width: '100%',
+              }]}
               onPress={() => { triggerVibration('light'); router.back(); }}
             >
               <Text style={[styles.mainButtonText, { color: theme.text }]}>{t('common.backHome')}</Text>
@@ -111,149 +248,181 @@ export default function RechargePage() {
         )}
       </View>
 
-      {/* 2. COUCHE UI (BOUTON RETOUR + SCAN + FOOTER) */}
+      {/* 2. COUCHE UI */}
       <SafeAreaView style={styles.mainOverlay} edges={['top', 'bottom']}>
-        
+
         {/* BOUTON RETOUR FLOTTANT */}
-        <TouchableOpacity 
-          style={styles.floatingNavButton} 
+        <TouchableOpacity
+          style={styles.floatingNavButton}
           onPress={() => {
-              triggerVibration('light');
-              imageUri ? setImageUri(null) : router.back();
+            triggerVibration('light');
+            if (imageUri) {
+              setImageUri(null);
+              setDetectedOp(null);
+              setDetectedCode(null);
+              setUssdCode(null);
+              resetProgress();
+            } else {
+              router.back();
+            }
           }}
         >
-          <Ionicons name={imageUri ? "close" : "arrow-back"} size={28} color="#FFF" />
+          <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
         </TouchableOpacity>
 
-        {/* ZONE DU CADRE (Prend l'espace central) */}
+        {/* CADRE DE SCAN */}
         <View style={styles.scanContainer}>
-          <View style={[styles.frame, { width: FRAME_WIDTH, height: FRAME_HEIGHT, borderColor: detectedOp ? detectedOp.color : 'rgba(255,255,255,0.2)' }]}>
+          <View style={[styles.frame, {
+            width: FRAME_WIDTH,
+            height: FRAME_HEIGHT,
+            borderColor: detectedOp ? detectedOp.color : 'rgba(255,255,255,0.2)',
+          }]}>
             <View style={[styles.corner, styles.cornerTL, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
             <View style={[styles.corner, styles.cornerTR, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
             <View style={[styles.corner, styles.cornerBL, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
             <View style={[styles.corner, styles.cornerBR, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
-            
+
             {detectedOp && (
               <View style={styles.detectedBadge}>
-                 <Image source={detectedOp.logo} style={styles.miniLogo} resizeMode="contain" />
-                 <Text style={styles.detectedText}>{detectedOp.name}</Text>
+                <Image source={detectedOp.logo} style={styles.miniLogo} resizeMode="contain" />
+                <Text style={styles.detectedText}>{detectedOp.name}</Text>
               </View>
             )}
           </View>
         </View>
 
+        {/* FOOTER */}
         {!transactionDone && (
           <View style={[styles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <View style={styles.footerInner}>
+
               <View style={styles.statusBox}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>{t('recharge.title').toUpperCase()}</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>RECHARGE FLASH</Text>
                 <Text style={[styles.status, { color: theme.text }]} numberOfLines={1}>
-                  {loading ? t('recharge.analyzing') : detectedOp ? t('recharge.codeReady') : t('recharge.placeCard')}
+                  {statusLabel}
                 </Text>
               </View>
-              
+
+              {/* Progress bar animée */}
               <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
-                <View style={[styles.progressFill, { 
-                  width: loading ? '70%' : detectedOp ? '100%' : '5%', 
-                  backgroundColor: detectedOp ? detectedOp.color : theme.tint 
-                }]} />
+                <Animated.View style={[
+                  styles.progressFill,
+                  { width: progressWidth, backgroundColor: progressColor },
+                ]} />
               </View>
 
               <View style={styles.actionRow}>
+                {/* Bouton reset/galerie à gauche */}
                 {detectedOp ? (
-                  <TouchableOpacity 
-                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
-                    onPress={() => {
-                      triggerVibration('light');
-                      setDetectedOp(null);
-                      setImageUri(null);
-                    }}
+                  <TouchableOpacity
+                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                    onPress={handleReset}
                   >
                     <Ionicons name="refresh-outline" size={26} color={theme.text} />
                   </TouchableOpacity>
                 ) : (
-                  <TouchableOpacity 
-                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
+                  <TouchableOpacity
+                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                     onPress={pickImage}
+                    disabled={loading}
                   >
                     <Ionicons name="images-outline" size={26} color={theme.text} />
                   </TouchableOpacity>
                 )}
-                
-                <TouchableOpacity 
-                    style={[styles.mainButton, { backgroundColor: detectedOp ? detectedOp.color : theme.tint }]} 
-                    onPress={() => {
-                        if (!detectedOp) {
-                            runAIAnalysis('orange');
-                        } else {
-                            triggerVibration('success');
-                            const rechargeCode = "123456789012"; 
-                            const ussdString = `tel:${detectedOp.prefix}${rechargeCode}#`;
-                            Linking.openURL(ussdString);
-                            setTransactionDone(true);
-                        }
-                    }}
-                >
-                  {loading ? <ActivityIndicator color="#000" size="small" /> : <Ionicons name={detectedOp ? "call" : "scan-outline"} size={22} color="#000" />}
-                  <Text style={styles.mainButtonText}>{loading ? "" : detectedOp ? t('recharge.rechargeBtn') : t('recharge.detectBtn')}</Text>
-                </TouchableOpacity>
+
+                {/* Bouton principal : code USSD OU état par défaut */}
+                {ussdCode && detectedOp ? (
+                  // ── Code USSD exact cliquable ────────────────────────────
+                  // Telma  → #321*34025870796876#
+                  // Orange → *123*34025870796876#
+                  // Airtel → #130*34025870796876#
+                  <TouchableOpacity
+                    style={[styles.ussdButton, { backgroundColor: detectedOp.color }]}
+                    onPress={handleUssdPress}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name="call" size={18} color="#000" />
+                    <Text style={styles.ussdCode} numberOfLines={1} adjustsFontSizeToFit>
+                      {ussdCode}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  // ── Bouton par défaut ────────────────────────────────────
+                  <TouchableOpacity
+                    style={[styles.mainButton, { backgroundColor: theme.tint }]}
+                    onPress={pickImage}
+                    disabled={loading}
+                  >
+                    {loading
+                      ? <ActivityIndicator color="#000" size="small" />
+                      : <Ionicons name="scan-outline" size={22} color="#000" />
+                    }
+                    <Text style={styles.mainButtonText}>
+                      {loading ? '' : 'Détecter le code'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
+
             </View>
           </View>
         )}
-
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  cameraLayer: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
-  camera: { flex: 1 },
-  fullPreviewImage: { flex: 1 },
-  mainOverlay: { flex: 1, zIndex: 1, justifyContent: 'space-between' },
-
-  floatingNavButton: { 
-    position: 'absolute', 
-    top: 20, 
-    left: 20, 
-    zIndex: 10, 
-    padding: 12, 
-    backgroundColor: 'rgba(0,0,0,0.5)', 
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+  container:         { flex: 1, backgroundColor: '#000' },
+  cameraLayer:       { ...StyleSheet.absoluteFillObject, zIndex: 0 },
+  camera:            { flex: 1 },
+  fullPreviewImage:  { flex: 1 },
+  mainOverlay:       { flex: 1, zIndex: 1, justifyContent: 'space-between' },
+  floatingNavButton: {
+    position: 'absolute', top: 20, left: 20, zIndex: 10,
+    padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-
-  scanContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  frame: { position: 'relative', justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
-  corner: { position: 'absolute', width: 30, height: 30, borderWidth: 5 },
-  cornerTL: { top: -5, left: -5, borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 15 },
-  cornerTR: { top: -5, right: -5, borderBottomWidth: 0, borderLeftWidth: 0, borderTopRightRadius: 15 },
-  cornerBL: { bottom: -5, left: -5, borderTopWidth: 0, borderRightWidth: 0, borderBottomLeftRadius: 15 },
-  cornerBR: { bottom: -5, right: -5, borderTopWidth: 0, borderLeftWidth: 0, borderBottomRightRadius: 15 },
-
-  detectedBadge: { backgroundColor: 'rgba(0,0,0,0.8)', padding: 10, borderRadius: 15, alignItems: 'center', flexDirection: 'row', gap: 8 },
-  miniLogo: { width: 22, height: 22 },
-  detectedText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
-
-  footerWrapper: {
-    borderTopLeftRadius: 35,
-    borderTopRightRadius: 35,
-    borderTopWidth: 1,
+  scanContainer:     { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  frame:             { position: 'relative', justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  corner:            { position: 'absolute', width: 30, height: 30, borderWidth: 5 },
+  cornerTL:          { top: -5, left: -5,    borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 15 },
+  cornerTR:          { top: -5, right: -5,   borderBottomWidth: 0, borderLeftWidth: 0,  borderTopRightRadius: 15 },
+  cornerBL:          { bottom: -5, left: -5,  borderTopWidth: 0,    borderRightWidth: 0, borderBottomLeftRadius: 15 },
+  cornerBR:          { bottom: -5, right: -5, borderTopWidth: 0,    borderLeftWidth: 0,  borderBottomRightRadius: 15 },
+  detectedBadge:     {
+    backgroundColor: 'rgba(0,0,0,0.8)', padding: 10, borderRadius: 15,
+    alignItems: 'center', flexDirection: 'row', gap: 8,
+  },
+  miniLogo:          { width: 22, height: 22 },
+  detectedText:      { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
+  footerWrapper:     {
+    borderTopLeftRadius: 35, borderTopRightRadius: 35, borderTopWidth: 1,
     paddingBottom: Platform.OS === 'android' ? 20 : 0,
   },
-  footerInner: {
-    padding: 25,
+  footerInner:       { padding: 25 },
+  statusBox:         { marginBottom: 12 },
+  label:             { fontSize: 9, fontWeight: '900', marginBottom: 4 },
+  status:            { fontSize: 18, fontWeight: 'bold' },
+  progressBg:        { height: 4, borderRadius: 2, marginBottom: 25 },
+  progressFill:      { height: 4, borderRadius: 2 },
+  actionRow:         { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  galleryButton:     {
+    width: 60, height: 60, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1,
   },
-  statusBox: { marginBottom: 12 },
-  label: { fontSize: 9, fontWeight: '900', marginBottom: 4 },
-  status: { fontSize: 18, fontWeight: 'bold' },
-  progressBg: { height: 4, borderRadius: 2, marginBottom: 25 },
-  progressFill: { height: 4, borderRadius: 2 },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 15 },
-  galleryButton: { width: 60, height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
-  mainButton: { flex: 1, height: 60, borderRadius: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
-  mainButtonText: { color: '#000', fontWeight: '900', fontSize: 14 }
+  mainButton:        {
+    flex: 1, height: 60, borderRadius: 18, flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center', gap: 10,
+  },
+  mainButtonText:    { color: '#000', fontWeight: '900', fontSize: 14 },
+  ussdButton:        {
+    flex: 1, height: 60, borderRadius: 18, flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center', gap: 8,
+    paddingHorizontal: 14,
+  },
+  ussdCode:          {
+    color: '#000', fontWeight: '900', fontSize: 15,
+    letterSpacing: 0.5, flexShrink: 1,
+  },
 });
