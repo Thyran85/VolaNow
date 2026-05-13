@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const styles = createStyles(theme);
 
   const languages = [
+    { code: 'mg', label: 'Malagasy' },
     { code: 'fr', label: 'Français' },
     { code: 'en', label: 'English' },
   ];
@@ -109,7 +110,7 @@ export default function SettingsPage() {
           <SettingItem 
             icon="globe" 
             title={t('settings.language')} 
-            subtitle={i18n.language === 'fr' ? "Français" : "English"} 
+            subtitle={i18n.language === 'mg' ? "Malagasy" : i18n.language === 'fr' ? "Français" : "English"} 
             color="#F59E0B" 
             onPress={() => setIsLanguageModalVisible(true)}
           />
