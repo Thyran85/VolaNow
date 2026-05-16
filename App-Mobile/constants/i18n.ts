@@ -69,6 +69,7 @@ const resources = {
         helper: "L'appel USSD sera lancé automatiquement. Vous devrez saisir votre code secret pour valider.",
         errorId: "ID du point de retrait invalide (10 chiffres attendus)",
         errorAmount: "Montant invalide",
+        scan: "Scanner",
       },
       transfer: {
         title: "Transfert d'argent",
@@ -175,6 +176,7 @@ const resources = {
         helper: "The USSD call will be launched automatically. You will need to enter your secret code to validate.",
         errorId: "Invalid Cash Point ID (10 digits expected)",
         errorAmount: "Invalid amount",
+        scan: "Scan",
       },
       transfer: {
         title: "Money Transfer",
@@ -281,6 +283,7 @@ const resources = {
         helper: "Ny antso USSD dia hatao ho azy. Mila manoratra ny kaody miafinao ianao mba hanamafisana.",
         errorId: "ID Point de Retrait tsy mety (10 isa andrasana)",
         errorAmount: "Vola tsy mety",
+        scan: "Skanera",
       },
       transfer: {
         title: "Fampitana vola",

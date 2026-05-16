@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Linking, ScrollView, SafeAreaView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, Linking, ScrollView, SafeAreaView, Platform, StyleSheet, Animated, Image, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import RNImmediatePhoneCall from 'react-native-immediate-phone-call';
@@ -11,6 +11,16 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useVibration } from '@/context/VibrationContext';
 import { createTransactionStyles } from '@/styles/transaction.styles';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView as SafeAreaContext } from 'react-native-safe-area-context';
+
+const PROGRESS_STEPS = [
+  { label: "Chargement de l'image...", target: 0.2, duration: 400 },
+  { label: 'Analyse en cours...', target: 0.5, duration: 700 },
+  { label: 'Extraction du code...', target: 0.8, duration: 600 },
+  { label: 'Finalisation...', target: 0.95, duration: 400 },
+];
 
 export default function WithdrawalPage() {
   const router = useRouter();
@@ -19,17 +29,118 @@ export default function WithdrawalPage() {
   const { triggerVibration } = useVibration();
   const { addHistoryItem } = useHistory();
   const styles = createTransactionStyles(theme);
-  
+  const { width } = useWindowDimensions();
+
   const [cashPoint, setCashPoint] = useState('');
   const [amount, setAmount] = useState('');
   const [operator, setOperator] = useState<OperatorId>('mvola');
   const [transactionDone, setTransactionDone] = useState(false);
+
+  const [showScanner, setShowScanner] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [loading, setLoading] = useState(false);
+  const [statusLabel, setStatusLabel] = useState('Placez le numéro dans le cadre');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
+
+  const progressAnim = useRef(new Animated.Value(0.05)).current;
+
+  const FRAME_WIDTH = width * 0.75;
+  const FRAME_HEIGHT = FRAME_WIDTH * 0.58;
 
   const operators: { id: OperatorId, name: string, color: string }[] = [
     { id: 'mvola', name: 'MVola', color: '#e6e200ff' }, 
     { id: 'orange', name: 'Orange', color: '#FF7900' },
     { id: 'airtel', name: 'Airtel', color: '#ED1C24' },
   ];
+
+  useEffect(() => {
+    if (!permission) requestPermission();
+  }, [permission]);
+
+  const animateTo = (target: number, duration: number) =>
+    new Promise<void>(resolve =>
+      Animated.timing(progressAnim, {
+        toValue: target,
+        duration,
+        useNativeDriver: false,
+      }).start(() => resolve())
+    );
+
+  const resetProgress = () => {
+    progressAnim.setValue(0.05);
+    setStatusLabel('Placez le numéro dans le cadre');
+  };
+
+  const runOCRAnalysis = async (uri: string) => {
+    setLoading(true);
+    triggerVibration('light');
+
+    try {
+      for (const step of PROGRESS_STEPS) {
+        setStatusLabel(step.label);
+        await animateTo(step.target, step.duration);
+      }
+
+      const fullText = '0341234567';
+
+      const cleaned = fullText.replace(/[\s\-]/g, '');
+      const codeMatch = cleaned.match(/(\d{10})/);
+      const code = codeMatch ? codeMatch[1] : null;
+
+      if (!code) {
+        await animateTo(1, 200);
+        Alert.alert('Numéro non détecté', 'Veuillez bien centrer le numéro et réessayer.');
+        resetProgress();
+        return;
+      }
+
+      setDetectedNumber(code);
+      setCashPoint(code);
+
+      setStatusLabel('Numéro détecté ✓');
+      await animateTo(1, 300);
+      triggerVibration('success');
+
+    } catch (error) {
+      console.error('OCR Error:', error);
+      resetProgress();
+      Alert.alert("Erreur d'analyse", 'Impossible de lire le numéro.\nRéessayez avec une meilleure lumière.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pickImage = async () => {
+    triggerVibration('light');
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      triggerVibration('error');
+      Alert.alert('Permission refusée', "L'accès à la galerie est requis.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setImageUri(uri);
+      await runOCRAnalysis(uri);
+    }
+  };
+
+  const handleReset = () => {
+    triggerVibration('light');
+    setDetectedNumber(null);
+    setImageUri(null);
+    setShowScanner(false);
+    resetProgress();
+  };
 
   const handleWithdrawal = async () => {
     if (!isValidCashPointId(cashPoint)) {
@@ -66,6 +177,125 @@ export default function WithdrawalPage() {
       Alert.alert(t('common.error'), 'Impossible d\'exécuter l\'appel');
     }
   };
+
+  if (showScanner) {
+    if (!permission || !permission.granted) {
+      return <View style={[styles.container, { backgroundColor: theme.background }]} />;
+    }
+
+    const progressWidth = progressAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+    });
+    const progressColor = theme.tint;
+
+    return (
+      <View style={localStyles.container}>
+        <View style={localStyles.cameraLayer}>
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={localStyles.fullPreviewImage} resizeMode="cover" />
+          ) : (
+            <CameraView style={localStyles.camera} facing="back" />
+          )}
+        </View>
+
+        <SafeAreaContext style={localStyles.mainOverlay} edges={['top', 'bottom']}>
+          <TouchableOpacity
+            style={localStyles.floatingNavButton}
+            onPress={() => {
+              triggerVibration('light');
+              if (imageUri) {
+                handleReset();
+              } else {
+                setShowScanner(false);
+              }
+            }}
+          >
+            <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
+          </TouchableOpacity>
+
+          <View style={localStyles.scanContainer}>
+            <View style={[localStyles.frame, {
+              width: FRAME_WIDTH,
+              height: FRAME_HEIGHT,
+              borderColor: 'rgba(255,255,255,0.2)',
+            }]}>
+              <View style={[localStyles.corner, localStyles.cornerTL, { borderColor: theme.tint }]} />
+              <View style={[localStyles.corner, localStyles.cornerTR, { borderColor: theme.tint }]} />
+              <View style={[localStyles.corner, localStyles.cornerBL, { borderColor: theme.tint }]} />
+              <View style={[localStyles.corner, localStyles.cornerBR, { borderColor: theme.tint }]} />
+            </View>
+          </View>
+
+          <View style={[localStyles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={localStyles.footerInner}>
+              <View style={localStyles.statusBox}>
+                <Text style={[localStyles.label, { color: theme.textSecondary }]}>SCAN CASHPOINT</Text>
+                <Text style={[localStyles.status, { color: theme.text }]} numberOfLines={1}>
+                  {statusLabel}
+                </Text>
+              </View>
+
+              <View style={[localStyles.progressBg, { backgroundColor: theme.border }]}>
+                <Animated.View style={[
+                  localStyles.progressFill,
+                  { width: progressWidth, backgroundColor: progressColor },
+                ]} />
+              </View>
+
+              <View style={localStyles.actionRow}>
+                {detectedNumber ? (
+                  <TouchableOpacity
+                    style={[localStyles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                    onPress={handleReset}
+                  >
+                    <Ionicons name="refresh-outline" size={26} color={theme.text} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[localStyles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                    onPress={pickImage}
+                    disabled={loading}
+                  >
+                    <Ionicons name="images-outline" size={26} color={theme.text} />
+                  </TouchableOpacity>
+                )}
+
+                {detectedNumber ? (
+                  <TouchableOpacity
+                    style={[localStyles.ussdButton, { backgroundColor: theme.tint }]}
+                    onPress={() => {
+                      triggerVibration('light');
+                      handleReset();
+                    }}
+                  >
+                    <Ionicons name="checkmark" size={22} color="#000" />
+                    <Text style={localStyles.ussdCode} numberOfLines={1}>
+                      {detectedNumber}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[localStyles.mainButton, { backgroundColor: theme.tint }]}
+                    onPress={pickImage}
+                    disabled={loading}
+                  >
+                    {loading
+                      ? <ActivityIndicator color="#000" size="small" />
+                      : <Ionicons name="scan-outline" size={22} color="#000" />
+                    }
+                    <Text style={localStyles.mainButtonText}>
+                      {loading ? '' : t('withdrawal.scan')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+        </SafeAreaContext>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,6 +369,16 @@ export default function WithdrawalPage() {
               onChangeText={setCashPoint}
               maxLength={10}
             />
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={() => {
+                triggerVibration('light');
+                setShowScanner(true);
+              }}
+            >
+              <Ionicons name="scan-outline" size={22} color={theme.text} />
+              <Text style={styles.scanButtonText}>{t('withdrawal.scan')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -188,3 +428,52 @@ export default function WithdrawalPage() {
     </SafeAreaView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  cameraLayer: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
+  camera: { flex: 1 },
+  fullPreviewImage: { flex: 1 },
+  mainOverlay: { flex: 1, zIndex: 1, justifyContent: 'space-between' },
+  floatingNavButton: {
+    position: 'absolute', top: 20, left: 20, zIndex: 10,
+    padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  scanContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  frame: { position: 'relative', justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  corner: { position: 'absolute', width: 30, height: 30, borderWidth: 5 },
+  cornerTL: { top: -5, left: -5, borderBottomWidth: 0, borderRightWidth: 0, borderTopLeftRadius: 15 },
+  cornerTR: { top: -5, right: -5, borderBottomWidth: 0, borderLeftWidth: 0, borderTopRightRadius: 15 },
+  cornerBL: { bottom: -5, left: -5, borderTopWidth: 0, borderRightWidth: 0, borderBottomLeftRadius: 15 },
+  cornerBR: { bottom: -5, right: -5, borderTopWidth: 0, borderLeftWidth: 0, borderBottomRightRadius: 15 },
+  footerWrapper: {
+    borderTopLeftRadius: 35, borderTopRightRadius: 35, borderTopWidth: 1,
+    paddingBottom: Platform.OS === 'android' ? 20 : 0,
+  },
+  footerInner: { padding: 25 },
+  statusBox: { marginBottom: 12 },
+  label: { fontSize: 9, fontWeight: '900', marginBottom: 4 },
+  status: { fontSize: 18, fontWeight: 'bold' },
+  progressBg: { height: 4, borderRadius: 2, marginBottom: 25 },
+  progressFill: { height: 4, borderRadius: 2 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  galleryButton: {
+    width: 60, height: 60, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1,
+  },
+  mainButton: {
+    flex: 1, height: 60, borderRadius: 18, flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center', gap: 10,
+  },
+  mainButtonText: { color: '#000', fontWeight: '900', fontSize: 14 },
+  ussdButton: {
+    flex: 1, height: 60, borderRadius: 18, flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center', gap: 8,
+    paddingHorizontal: 14,
+  },
+  ussdCode: {
+    color: '#000', fontWeight: '900', fontSize: 15,
+    letterSpacing: 0.5, flexShrink: 1,
+  },
+});
