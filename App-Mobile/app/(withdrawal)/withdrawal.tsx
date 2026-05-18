@@ -125,24 +125,22 @@ export default function WithdrawalPage() {
         }
 
         const cleaned = fullText.replace(/[\s\-]/g, '');
-        const codeMatch = cleaned.match(/(\d{10})/);
-        const code = codeMatch ? codeMatch[1] : null;
+        const codeMatch = cleaned.match(/03\d{8}/);
+        const code = codeMatch ? codeMatch[0] : null;
 
         if (!code) {
           await animateTo(1, 200);
           Alert.alert(
             'Numéro non détecté',
-            `Texte lu: "${fullText}"\n\nAucun numéro à 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
+            `Texte lu: "${fullText}"\n\nAucun numéro commençant par 03 et comportant 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
           );
           resetProgress();
           return;
         }
 
-        setDetectedNumber(code);
         setCashPoint(code);
+        setShowScanner(false);
 
-        setStatusLabel('Numéro détecté ✓');
-        await animateTo(1, 300);
         triggerVibration('success');
         setLoading(false);
         return;
@@ -159,24 +157,22 @@ export default function WithdrawalPage() {
       }
 
       const cleaned = fullText.replace(/[\s\-]/g, '');
-      const codeMatch = cleaned.match(/(\d{10})/);
-      const code = codeMatch ? codeMatch[1] : null;
+      const codeMatch = cleaned.match(/03\d{8}/);
+      const code = codeMatch ? codeMatch[0] : null;
 
       if (!code) {
         await animateTo(1, 200);
         Alert.alert(
           'Numéro non détecté',
-          `Texte lu: "${fullText}"\n\nAucun numéro à 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
+          `Texte lu: "${fullText}"\n\nAucun numéro commençant par 03 et comportant 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
         );
         resetProgress();
         return;
       }
 
-      setDetectedNumber(code);
       setCashPoint(code);
+      setShowScanner(false);
 
-      setStatusLabel('Numéro détecté ✓');
-      await animateTo(1, 300);
       triggerVibration('success');
 
     } catch (error) {
