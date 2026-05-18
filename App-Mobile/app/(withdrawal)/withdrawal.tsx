@@ -15,6 +15,24 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView as SafeAreaContext } from 'react-native-safe-area-context';
 
+let recognizeText: ((uri: string) => Promise<{ text: string }>) | null = null;
+let ImageManipulator: any = null;
+
+try {
+  const expoOcrKit = require('expo-ocr-kit');
+  if (expoOcrKit && expoOcrKit.recognizeText) {
+    recognizeText = expoOcrKit.recognizeText;
+  }
+} catch (e) {
+  console.log('expo-ocr-kit not available');
+}
+
+try {
+  ImageManipulator = require('expo-image-manipulator').default || require('expo-image-manipulator');
+} catch (e) {
+  console.log('ImageManipulator not available');
+}
+
 const PROGRESS_STEPS = [
   { label: "Chargement de l'image...", target: 0.2, duration: 400 },
   { label: 'Analyse en cours...', target: 0.5, duration: 700 },
@@ -42,6 +60,7 @@ export default function WithdrawalPage() {
   const [statusLabel, setStatusLabel] = useState('Placez le numéro dans le cadre');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const progressAnim = useRef(new Animated.Value(0.05)).current;
 
@@ -82,7 +101,62 @@ export default function WithdrawalPage() {
         await animateTo(step.target, step.duration);
       }
 
-      const fullText = '0341234567';
+      let processedUri = uri;
+
+      if (ImageManipulator && ImageManipulator.manipulateAsync) {
+        const manipulatedImage = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: 800 } }],
+          { compress: 0.9, format: 'jpeg' }
+        );
+        processedUri = manipulatedImage.uri;
+      }
+
+      if (!recognizeText) {
+        const { default: TextRecognition } = await import('@react-native-ml-kit/text-recognition');
+        const result = await TextRecognition.recognize(processedUri);
+        const fullText = result.text;
+
+        if (!fullText || fullText.trim() === '') {
+          await animateTo(1, 200);
+          Alert.alert('Texte non détecté', 'Aucun texte n\'a été trouvé. Veuillez réessayer.');
+          resetProgress();
+          return;
+        }
+
+        const cleaned = fullText.replace(/[\s\-]/g, '');
+        const codeMatch = cleaned.match(/(\d{10})/);
+        const code = codeMatch ? codeMatch[1] : null;
+
+        if (!code) {
+          await animateTo(1, 200);
+          Alert.alert(
+            'Numéro non détecté',
+            `Texte lu: "${fullText}"\n\nAucun numéro à 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
+          );
+          resetProgress();
+          return;
+        }
+
+        setDetectedNumber(code);
+        setCashPoint(code);
+
+        setStatusLabel('Numéro détecté ✓');
+        await animateTo(1, 300);
+        triggerVibration('success');
+        setLoading(false);
+        return;
+      }
+
+      const result = await recognizeText(processedUri);
+      const fullText = result.text;
+
+      if (!fullText || fullText.trim() === '') {
+        await animateTo(1, 200);
+        Alert.alert('Texte non détecté', 'Aucun texte n\'a été trouvé. Veuillez réessayer.');
+        resetProgress();
+        return;
+      }
 
       const cleaned = fullText.replace(/[\s\-]/g, '');
       const codeMatch = cleaned.match(/(\d{10})/);
@@ -90,7 +164,10 @@ export default function WithdrawalPage() {
 
       if (!code) {
         await animateTo(1, 200);
-        Alert.alert('Numéro non détecté', 'Veuillez bien centrer le numéro et réessayer.');
+        Alert.alert(
+          'Numéro non détecté',
+          `Texte lu: "${fullText}"\n\nAucun numéro à 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
+        );
         resetProgress();
         return;
       }
@@ -105,7 +182,8 @@ export default function WithdrawalPage() {
     } catch (error) {
       console.error('OCR Error:', error);
       resetProgress();
-      Alert.alert("Erreur d'analyse", 'Impossible de lire le numéro.\nRéessayez avec une meilleure lumière.');
+      const errorMessage = error.message || JSON.stringify(error);
+      Alert.alert("Erreur OCR", `Erreur: ${errorMessage}\nRéessayez.`);
     } finally {
       setLoading(false);
     }
@@ -131,6 +209,34 @@ export default function WithdrawalPage() {
       const uri = result.assets[0].uri;
       setImageUri(uri);
       await runOCRAnalysis(uri);
+    }
+  };
+
+  const captureFromCamera = async () => {
+    if (isCapturing) return;
+    setIsCapturing(true);
+    triggerVibration('light');
+
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        triggerVibration('error');
+        Alert.alert('Permission refusée', "L'accès à la caméra est requis.");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const uri = result.assets[0].uri;
+        setImageUri(uri);
+        await runOCRAnalysis(uri);
+      }
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -277,15 +383,15 @@ export default function WithdrawalPage() {
                 ) : (
                   <TouchableOpacity
                     style={[localStyles.mainButton, { backgroundColor: theme.tint }]}
-                    onPress={pickImage}
+                    onPress={captureFromCamera}
                     disabled={loading}
                   >
-                    {loading
+                    {loading || isCapturing
                       ? <ActivityIndicator color="#000" size="small" />
-                      : <Ionicons name="scan-outline" size={22} color="#000" />
+                      : <Ionicons name="camera-outline" size={22} color="#000" />
                     }
                     <Text style={localStyles.mainButtonText}>
-                      {loading ? '' : t('withdrawal.scan')}
+                      {loading || isCapturing ? '' : t('withdrawal.scan')}
                     </Text>
                   </TouchableOpacity>
                 )}
