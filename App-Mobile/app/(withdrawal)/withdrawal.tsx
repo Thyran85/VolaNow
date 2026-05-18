@@ -178,7 +178,7 @@ export default function WithdrawalPage() {
     } catch (error) {
       console.error('OCR Error:', error);
       resetProgress();
-      const errorMessage = error.message || JSON.stringify(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       Alert.alert("Erreur OCR", `Erreur: ${errorMessage}\nRéessayez.`);
     } finally {
       setLoading(false);
