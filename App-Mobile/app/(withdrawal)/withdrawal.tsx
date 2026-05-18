@@ -50,6 +50,7 @@ export default function WithdrawalPage() {
   const { width } = useWindowDimensions();
 
   const [cashPoint, setCashPoint] = useState('');
+  const [agentCode, setAgentCode] = useState('');
   const [amount, setAmount] = useState('');
   const [operator, setOperator] = useState<OperatorId>('mvola');
   const [transactionDone, setTransactionDone] = useState(false);
@@ -250,13 +251,18 @@ export default function WithdrawalPage() {
       Alert.alert(t('common.error'), t('withdrawal.errorId'));
       return;
     }
+    if (operator === 'airtel' && !agentCode.trim()) {
+      triggerVibration('warning');
+      Alert.alert(t('common.error'), t('withdrawal.errorAgentCode'));
+      return;
+    }
     if (!isValidAmount(amount)) {
       triggerVibration('warning');
       Alert.alert(t('common.error'), `${t('withdrawal.errorAmount')} (max ${TRANSACTION_CONFIG.maxAmount.toLocaleString()} ${t('common.ar')})`);
       return;
     }
 
-    const ussdCode = generateWithdrawalCode(operator, cashPoint, amount);
+    const ussdCode = generateWithdrawalCode(operator, cashPoint, amount, agentCode);
     
     try {
       triggerVibration('success');
@@ -415,7 +421,7 @@ export default function WithdrawalPage() {
           </View>
           <Text style={[styles.headerTitle, { textAlign: 'center' }]}>{t('common.successSent')}</Text>
           <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 14 }}>
-            {t('common.amountLabel')} {parseInt(amount).toLocaleString()} {t('common.ar')}{`\n`}{t('common.cashPointLabel')} {cashPoint}
+            {t('common.amountLabel')} {parseInt(amount).toLocaleString()} {t('common.ar')}{`\n`}{t('common.cashPointLabel')} {cashPoint}{operator === 'airtel' ? `\n${t('withdrawal.agentCodeLabel')} : ${agentCode}` : ''}
           </Text>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: theme.tint, marginTop: 12 }]}
@@ -423,6 +429,7 @@ export default function WithdrawalPage() {
               triggerVibration('light');
               setCashPoint('');
               setAmount('');
+              setAgentCode('');
               setOperator('mvola');
               setTransactionDone(false);
             }}
@@ -484,6 +491,23 @@ export default function WithdrawalPage() {
           </View>
         </View>
 
+        {operator === 'airtel' && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>{t('withdrawal.agentCodeLabel')}</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="key-outline" size={20} color={theme.icon} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder={t('withdrawal.agentCodePlaceholder')}
+                placeholderTextColor={theme.icon}
+                keyboardType="numeric"
+                value={agentCode}
+                onChangeText={setAgentCode}
+              />
+            </View>
+          </View>
+        )}
+
         <View style={styles.inputContainer}>
           <Text style={styles.label}>{t('withdrawal.amountLabel')}</Text>
           <View style={styles.inputWrapper}>
@@ -514,10 +538,10 @@ export default function WithdrawalPage() {
         <TouchableOpacity 
           style={[
             styles.actionButton, 
-            { backgroundColor: (isValidAmount(amount) && isValidCashPointId(cashPoint)) ? theme.tint : theme.border }
+            { backgroundColor: (isValidAmount(amount) && isValidCashPointId(cashPoint) && (operator !== 'airtel' || agentCode.trim())) ? theme.tint : theme.border }
           ]}
           onPress={handleWithdrawal}
-          disabled={!isValidAmount(amount) || !isValidCashPointId(cashPoint)}
+          disabled={!isValidAmount(amount) || !isValidCashPointId(cashPoint) || (operator === 'airtel' && !agentCode.trim())}
         >
           <Text style={styles.actionButtonText}>{t('withdrawal.confirmBtn')}</Text>
         </TouchableOpacity>

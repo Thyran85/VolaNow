@@ -29,7 +29,7 @@ export const USSD_CONFIG: Record<OperatorId, USSDTemplate> = {
     },
   },
   airtel: { //0326659530
-    withdrawal: '*436*4*{id}*{amount})*22#',
+    withdrawal: '*436*4*{id}*{amount})*{codeAgent}#',
     transfer: {
       mvola: '*436*2*3*1*{id}*{id}*{amount}#',   // Exemple: Vers MVola via menu Airtel
       orange: '*436*2*2*{id}*{amount}#',   // Exemple: Vers Orange via menu Airtel
@@ -58,8 +58,12 @@ export const generateTransferCode = (
 export const generateWithdrawalCode = (
   operator: OperatorId,
   cashPointId: string,
-  amount: string
+  amount: string,
+  agentCode?: string
 ): string => {
-  const template = USSD_CONFIG[operator].withdrawal;
+  let template = USSD_CONFIG[operator].withdrawal;
+  if (operator === 'airtel') {
+    template = template.replace('{codeAgent}', agentCode || '22');
+  }
   return template.replace('{id}', cashPointId).replace('{amount}', amount);
 };
