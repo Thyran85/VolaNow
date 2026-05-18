@@ -63,6 +63,7 @@ export default function WithdrawalPage() {
   const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
+  const cameraRef = useRef<any>(null);
   const progressAnim = useRef(new Animated.Value(0.05)).current;
 
   const FRAME_WIDTH = width * 0.75;
@@ -210,28 +211,22 @@ export default function WithdrawalPage() {
   };
 
   const captureFromCamera = async () => {
-    if (isCapturing) return;
+    if (isCapturing || !cameraRef.current) return;
     setIsCapturing(true);
     triggerVibration('light');
 
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        triggerVibration('error');
-        Alert.alert('Permission refusée', "L'accès à la caméra est requis.");
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 1,
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.85,
       });
 
-      if (!result.canceled) {
-        const uri = result.assets[0].uri;
-        setImageUri(uri);
-        await runOCRAnalysis(uri);
+      if (photo && photo.uri) {
+        setImageUri(photo.uri);
+        await runOCRAnalysis(photo.uri);
       }
+    } catch (error) {
+      console.error('In-app Capture Error:', error);
+      Alert.alert('Erreur', 'Impossible de capturer la photo depuis la caméra.');
     } finally {
       setIsCapturing(false);
     }
@@ -303,7 +298,7 @@ export default function WithdrawalPage() {
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={localStyles.fullPreviewImage} resizeMode="cover" />
           ) : (
-            <CameraView style={localStyles.camera} facing="back" />
+            <CameraView ref={cameraRef} style={localStyles.camera} facing="back" />
           )}
         </View>
 
@@ -313,7 +308,8 @@ export default function WithdrawalPage() {
             onPress={() => {
               triggerVibration('light');
               if (imageUri) {
-                handleReset();
+                setImageUri(null);
+                resetProgress();
               } else {
                 setShowScanner(false);
               }
@@ -380,6 +376,20 @@ export default function WithdrawalPage() {
                     <Ionicons name="checkmark" size={22} color="#000" />
                     <Text style={localStyles.ussdCode} numberOfLines={1}>
                       {detectedNumber}
+                    </Text>
+                  </TouchableOpacity>
+                ) : imageUri && !loading ? (
+                  <TouchableOpacity
+                    style={[localStyles.mainButton, { backgroundColor: '#ED1C24' }]}
+                    onPress={() => {
+                      triggerVibration('light');
+                      setImageUri(null);
+                      resetProgress();
+                    }}
+                  >
+                    <Ionicons name="refresh-outline" size={22} color="#FFF" />
+                    <Text style={[localStyles.mainButtonText, { color: '#FFF' }]}>
+                      {t('recharge.retry') || 'Réessayer'}
                     </Text>
                   </TouchableOpacity>
                 ) : (
