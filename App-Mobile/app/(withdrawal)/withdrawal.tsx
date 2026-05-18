@@ -491,22 +491,7 @@ export default function WithdrawalPage() {
           </View>
         </View>
 
-        {operator === 'airtel' && (
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('withdrawal.agentCodeLabel')}</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="key-outline" size={20} color={theme.icon} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder={t('withdrawal.agentCodePlaceholder')}
-                placeholderTextColor={theme.icon}
-                keyboardType="numeric"
-                value={agentCode}
-                onChangeText={setAgentCode}
-              />
-            </View>
-          </View>
-        )}
+        
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>{t('withdrawal.amountLabel')}</Text>
@@ -534,6 +519,23 @@ export default function WithdrawalPage() {
             ))}
           </View>
         </View>
+
+        {operator === 'airtel' && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>{t('withdrawal.agentCodeLabel')}</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="key-outline" size={20} color={theme.icon} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder={t('withdrawal.agentCodePlaceholder')}
+                placeholderTextColor={theme.icon}
+                keyboardType="numeric"
+                value={agentCode}
+                onChangeText={setAgentCode}
+              />
+            </View>
+          </View>
+        )}
 
         <TouchableOpacity 
           style={[
