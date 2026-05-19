@@ -61,7 +61,9 @@ export default function RechargePage() {
   const [transactionDone, setTransactionDone] = useState(false);
   const [detectedCode, setDetectedCode]       = useState<string | null>(null);
   const [ussdCode, setUssdCode]               = useState<string | null>(null);
+  const [isCapturing, setIsCapturing]         = useState(false);
 
+  const cameraRef = useRef<any>(null);
   const progressAnim = useRef(new Animated.Value(0.05)).current;
 
   const FRAME_WIDTH  = width * 0.75;
@@ -199,6 +201,29 @@ export default function RechargePage() {
     }
   };
 
+  // ── Capture Photo In-App ──────────────────────────────────────────────────
+  const captureFromCamera = async () => {
+    if (isCapturing || !cameraRef.current) return;
+    setIsCapturing(true);
+    triggerVibration('light');
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.85,
+      });
+
+      if (photo && photo.uri) {
+        setImageUri(photo.uri);
+        await runOCRAnalysis(photo.uri);
+      }
+    } catch (error) {
+      console.error('In-app Capture Error:', error);
+      Alert.alert('Erreur', 'Impossible de capturer la photo depuis la caméra.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
   // ── Lancement USSD direct (sans ouvrir l'app téléphone) ──────────────────
   const handleUssdPress = () => {
     if (!ussdCode || !detectedOp) return;
@@ -284,7 +309,7 @@ export default function RechargePage() {
         ) : imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.fullPreviewImage} resizeMode="cover" />
         ) : (
-          <CameraView style={styles.camera} facing="back" />
+          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
         )}
       </View>
 
@@ -370,12 +395,12 @@ export default function RechargePage() {
                   </TouchableOpacity>
                 )}
 
-                {/* Bouton principal : code USSD OU état par défaut */}
+                {/* Bouton principal : code USSD OU réessayer OU capturer */}
                 {ussdCode && detectedOp ? (
                   // ── Code USSD exact cliquable ────────────────────────────
                   // Telma  → #321*34025870796876#
                   // Orange → *123*34025870796876#
-                  // Airtel → #130*34025870796876#
+                  // Airtel → *888*693219962413722#
                   <TouchableOpacity
                     style={[styles.ussdButton, { backgroundColor: detectedOp.color }]}
                     onPress={handleUssdPress}
@@ -386,19 +411,28 @@ export default function RechargePage() {
                       {ussdCode}
                     </Text>
                   </TouchableOpacity>
+                ) : imageUri && !loading ? (
+                  <TouchableOpacity
+                    style={[styles.mainButton, { backgroundColor: '#ED1C24' }]}
+                    onPress={handleReset}
+                  >
+                    <Ionicons name="refresh-outline" size={22} color="#FFF" />
+                    <Text style={[styles.mainButtonText, { color: '#FFF' }]}>
+                      {t('recharge.retry') || 'Réessayer'}
+                    </Text>
+                  </TouchableOpacity>
                 ) : (
-                  // ── Bouton par défaut ────────────────────────────────────
                   <TouchableOpacity
                     style={[styles.mainButton, { backgroundColor: theme.tint }]}
-                    onPress={pickImage}
-                    disabled={loading}
+                    onPress={captureFromCamera}
+                    disabled={loading || isCapturing}
                   >
-                    {loading
+                    {loading || isCapturing
                       ? <ActivityIndicator color="#000" size="small" />
                       : <Ionicons name="scan-outline" size={22} color="#000" />
                     }
                     <Text style={styles.mainButtonText}>
-                      {loading ? '' : 'Détecter le code'}
+                      {loading || isCapturing ? '' : t('recharge.detectBtn') || 'Détecter le code'}
                     </Text>
                   </TouchableOpacity>
                 )}
