@@ -11,11 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useVibration } from '@/context/VibrationContext';
 import { useAppTheme } from '@/context/ThemeContext';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
+import RNImmediatePhoneCall from 'react-native-immediate-phone-call';
 
 // ─── Opérateurs avec format USSD correct ─────────────────────────────────────
-// Telma  → #321*CODE#
-// Orange → *123*CODE#
-// Airtel → #130*CODE#
+// Telma  → #321*CODE# (14 chiffres)
+// Orange → *123*CODE# (14 chiffres)
+// Airtel → *888*CODE# (15 chiffres - exceptionnel)
 const OPERATORS = {
   telma: {
     name: 'Telma / Yas',
@@ -32,7 +34,7 @@ const OPERATORS = {
   airtel: {
     name: 'Airtel',
     color: '#ED1C24',
-    ussd: (code: string) => `#130*${code}#`,
+    ussd: (code: string) => `*888*${code}#`,
     logo: require('../../assets/images/logo/airtel_logo.png'),
   },
 };
@@ -84,7 +86,7 @@ export default function RechargePage() {
     setStatusLabel('Placez la carte dans le cadre');
   };
 
-  // ── OCR (simulée — remplace par ML Kit en bare workflow) ──────────────────
+  // ── OCR (remplacé par ML Kit en bare workflow) ─────────────────
   const runOCRAnalysis = async (uri: string) => {
     setLoading(true);
     triggerVibration('light');
@@ -95,17 +97,51 @@ export default function RechargePage() {
         await animateTo(step.target, step.duration);
       }
 
-      // ── TODO : remplace par ton vrai OCR ─────────────────────────────────
-      // import TextRecognition from '@react-native-ml-kit/text-recognition';
-      // const result = await TextRecognition.recognize(uri);
-      // const fullText = result.text;
-      const fullText = 'TELMA 3402 5870 7968 76'; // ← simulation
-      // ─────────────────────────────────────────────────────────────────────
+      //  OCR avec ML Kit ─────────────────────────────────────────────────
+      const result = await TextRecognition.recognize(uri);
+      const fullText = result.text;
+      // ────────────────────────────────────────────────────────────────────
 
-      // Extraction du code (12-16 chiffres consécutifs)
-      const cleaned   = fullText.replace(/[\s\-]/g, '');
-      const codeMatch = cleaned.match(/(\d{12,16})/);
-      const code      = codeMatch ? codeMatch[1] : null;
+      // Détection opérateur d'abord (pour choisir le bon nombre de chiffres)
+      const upper = fullText.toUpperCase();
+      let operatorKey: keyof typeof OPERATORS = 'telma';
+      
+      // Airtel : détecté par *888* ou RAHA (spécifique à Airtel Madagascar)
+      if (upper.includes('*888*') || upper.includes('RAHA CREDIT') || upper.includes('RAHA INTERNET') || upper.includes('LAHARAN')) {
+        operatorKey = 'airtel';
+      }
+      // Orange : détecté par ORANGE ou MVOLA
+      else if (upper.includes('ORANGE') || upper.includes('MVOLA')) {
+        operatorKey = 'orange';
+      }
+      // Telma/Yas : YAS, KIKISO, ou par défaut
+      else if (upper.includes('YAS') || upper.includes('KIKISO') || upper.includes('MORAMORA')) {
+        operatorKey = 'telma';
+      }
+
+      // Extraction du code - on cherche toutes les séquences de chiffres
+      // Puis on prend celle qui correspond à la longueur attendue
+      const codeLength = operatorKey === 'airtel' ? 15 : 14;
+      
+      // Trouver toutes les séquences de chiffres (en ignorant espaces et tirets)
+      const lines = fullText.split('\n');
+      let code: string | null = null;
+      
+      for (const line of lines) {
+        const cleanedLine = line.replace(/[\s\-]/g, '');
+        const match = cleanedLine.match(/(\d+)/);
+        if (match && match[1].length === codeLength) {
+          code = match[1];
+          break;
+        }
+      }
+      
+      // Si pas trouvé ligne par ligne, chercher dans tout le texte
+      if (!code) {
+        const allDigits = fullText.replace(/[\s\-]/g, '');
+        const codeMatch = allDigits.match(new RegExp(`(\\d{${codeLength}})`));
+        code = codeMatch ? codeMatch[1] : null;
+      }
 
       if (!code) {
         await animateTo(1, 200);
@@ -114,18 +150,12 @@ export default function RechargePage() {
         return;
       }
 
-      // Détection opérateur
-      const upper = fullText.toUpperCase();
-      let operatorKey: keyof typeof OPERATORS = 'telma';
-      if (upper.includes('ORANGE'))      operatorKey = 'orange';
-      else if (upper.includes('AIRTEL')) operatorKey = 'airtel';
-
       const op = OPERATORS[operatorKey];
 
       // Construction du code USSD avec le bon format selon l'opérateur
       // Telma  → #321*34025870796876#
       // Orange → *123*34025870796876#
-      // Airtel → #130*34025870796876#
+      // Airtel → *888*693219962413722#
       const formatted = op.ussd(code);
 
       setDetectedCode(code);
@@ -169,12 +199,22 @@ export default function RechargePage() {
     }
   };
 
-  // ── Lancement USSD au tap sur le code ────────────────────────────────────
+  // ── Lancement USSD direct (sans ouvrir l'app téléphone) ──────────────────
   const handleUssdPress = () => {
     if (!ussdCode || !detectedOp) return;
     triggerVibration('success');
-    Linking.openURL(`tel:${ussdCode}`);
-    setTransactionDone(true);
+    
+    try {
+      if (Platform.OS === 'android') {
+        RNImmediatePhoneCall.immediatePhoneCall(ussdCode);
+      } else {
+        Linking.openURL(`tel:${ussdCode}`);
+      }
+      setTransactionDone(true);
+    } catch (error) {
+      console.error('USSD Error:', error);
+      Alert.alert('Erreur', 'Impossible d\'exécuter le code USSD');
+    }
   };
 
   // ── Reset complet ─────────────────────────────────────────────────────────
