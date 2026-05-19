@@ -267,181 +267,190 @@ export default function RechargePage() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* 1. ARRIÈRE-PLAN */}
-      <View style={styles.cameraLayer}>
-        {transactionDone ? (
+      {transactionDone ? (
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
           <View style={{
-            flex: 1, backgroundColor: theme.background,
-            justifyContent: 'center', alignItems: 'center', padding: 24, gap: 20,
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+            gap: 20,
+            width: '100%',
           }}>
             <View style={{
-              width: 80, height: 80, borderRadius: 40,
-              backgroundColor: '#CCFF0030', alignItems: 'center', justifyContent: 'center',
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: '#CCFF0030',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}>
               <Ionicons name="checkmark-circle" size={56} color="#86D12E" />
             </View>
 
-            <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>{t('recharge.successSent')}</Text>
-
             <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>
-              Recharge envoyée !
+              {t('recharge.successSent') || "Recharge envoyée !"}
             </Text>
+            
             <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 14 }}>
               {t('recharge.successHelp')}
             </Text>
+
             <TouchableOpacity
-              style={[styles.mainButton, { backgroundColor: theme.tint, marginTop: 12, width: '100%' }]}
+              style={[styles.mainButton, { backgroundColor: theme.tint, marginTop: 12, width: '100%', flex: 0 }]}
               onPress={handleReset}
             >
               <Ionicons name="refresh-outline" size={22} color="#000" />
               <Text style={styles.mainButtonText}>{t('recharge.scanAnother')}</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.mainButton, {
-                backgroundColor: theme.surface, borderWidth: 1,
-                borderColor: theme.border, width: '100%',
+                backgroundColor: theme.surface,
+                borderWidth: 1,
+                borderColor: theme.border,
+                width: '100%',
+                flex: 0,
               }]}
               onPress={() => { triggerVibration('light'); router.back(); }}
             >
               <Text style={[styles.mainButtonText, { color: theme.text }]}>{t('common.backHome')}</Text>
             </TouchableOpacity>
           </View>
-        ) : imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.fullPreviewImage} resizeMode="cover" />
-        ) : (
-          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
-        )}
-      </View>
-
-      {/* 2. COUCHE UI */}
-      <SafeAreaView style={styles.mainOverlay} edges={['top', 'bottom']}>
-
-        {/* BOUTON RETOUR FLOTTANT */}
-        <TouchableOpacity
-          style={styles.floatingNavButton}
-          onPress={() => {
-            triggerVibration('light');
-            if (imageUri) {
-              setImageUri(null);
-              setDetectedOp(null);
-              setDetectedCode(null);
-              setUssdCode(null);
-              resetProgress();
-            } else {
-              router.back();
-            }
-          }}
-        >
-          <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
-        </TouchableOpacity>
-
-        {/* CADRE DE SCAN */}
-        <View style={styles.scanContainer}>
-          <View style={[styles.frame, {
-            width: FRAME_WIDTH,
-            height: FRAME_HEIGHT,
-            borderColor: detectedOp ? detectedOp.color : 'rgba(255,255,255,0.2)',
-          }]}>
-            <View style={[styles.corner, styles.cornerTL, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
-            <View style={[styles.corner, styles.cornerTR, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
-            <View style={[styles.corner, styles.cornerBL, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
-            <View style={[styles.corner, styles.cornerBR, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
-
-            {detectedOp && (
-              <View style={styles.detectedBadge}>
-                <Image source={detectedOp.logo} style={styles.miniLogo} resizeMode="contain" />
-                <Text style={styles.detectedText}>{detectedOp.name}</Text>
-              </View>
+        </SafeAreaView>
+      ) : (
+        <>
+          {/* 1. ARRIÈRE-PLAN */}
+          <View style={styles.cameraLayer}>
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={styles.fullPreviewImage} resizeMode="cover" />
+            ) : (
+              <CameraView ref={cameraRef} style={styles.camera} facing="back" />
             )}
           </View>
-        </View>
 
-        {/* FOOTER */}
-        {!transactionDone && (
-          <View style={[styles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={styles.footerInner}>
+          {/* 2. COUCHE UI */}
+          <SafeAreaView style={styles.mainOverlay} edges={['top', 'bottom']}>
+            {/* BOUTON RETOUR FLOTTANT */}
+            <TouchableOpacity
+              style={styles.floatingNavButton}
+              onPress={() => {
+                triggerVibration('light');
+                if (imageUri) {
+                  setImageUri(null);
+                  setDetectedOp(null);
+                  setDetectedCode(null);
+                  setUssdCode(null);
+                  resetProgress();
+                } else {
+                  router.back();
+                }
+              }}
+            >
+              <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
+            </TouchableOpacity>
 
-              <View style={styles.statusBox}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>RECHARGE FLASH</Text>
-                <Text style={[styles.status, { color: theme.text }]} numberOfLines={1}>
-                  {statusLabel}
-                </Text>
-              </View>
+            {/* CADRE DE SCAN */}
+            <View style={styles.scanContainer}>
+              <View style={[styles.frame, {
+                width: FRAME_WIDTH,
+                height: FRAME_HEIGHT,
+                borderColor: detectedOp ? detectedOp.color : 'rgba(255,255,255,0.2)',
+              }]}>
+                <View style={[styles.corner, styles.cornerTL, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
+                <View style={[styles.corner, styles.cornerTR, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
+                <View style={[styles.corner, styles.cornerBL, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
+                <View style={[styles.corner, styles.cornerBR, { borderColor: detectedOp ? detectedOp.color : theme.tint }]} />
 
-              {/* Progress bar animée */}
-              <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
-                <Animated.View style={[
-                  styles.progressFill,
-                  { width: progressWidth, backgroundColor: progressColor },
-                ]} />
-              </View>
-
-              <View style={styles.actionRow}>
-                {/* Bouton reset/galerie à gauche */}
-                {detectedOp ? (
-                  <TouchableOpacity
-                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
-                    onPress={handleReset}
-                  >
-                    <Ionicons name="refresh-outline" size={26} color={theme.text} />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
-                    onPress={pickImage}
-                    disabled={loading}
-                  >
-                    <Ionicons name="images-outline" size={26} color={theme.text} />
-                  </TouchableOpacity>
-                )}
-
-                {/* Bouton principal : code USSD OU réessayer OU capturer */}
-                {ussdCode && detectedOp ? (
-                  // ── Code USSD exact cliquable ────────────────────────────
-                  // Telma  → #321*34025870796876#
-                  // Orange → *123*34025870796876#
-                  // Airtel → *888*693219962413722#
-                  <TouchableOpacity
-                    style={[styles.ussdButton, { backgroundColor: detectedOp.color }]}
-                    onPress={handleUssdPress}
-                    activeOpacity={0.75}
-                  >
-                    <Ionicons name="call" size={18} color="#000" />
-                    <Text style={styles.ussdCode} numberOfLines={1} adjustsFontSizeToFit>
-                      {ussdCode}
-                    </Text>
-                  </TouchableOpacity>
-                ) : imageUri && !loading ? (
-                  <TouchableOpacity
-                    style={[styles.mainButton, { backgroundColor: '#ED1C24' }]}
-                    onPress={handleReset}
-                  >
-                    <Ionicons name="refresh-outline" size={22} color="#FFF" />
-                    <Text style={[styles.mainButtonText, { color: '#FFF' }]}>
-                      {t('recharge.retry') || 'Réessayer'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={[styles.mainButton, { backgroundColor: theme.tint }]}
-                    onPress={captureFromCamera}
-                    disabled={loading || isCapturing}
-                  >
-                    {loading || isCapturing
-                      ? <ActivityIndicator color="#000" size="small" />
-                      : <Ionicons name="scan-outline" size={22} color="#000" />
-                    }
-                    <Text style={styles.mainButtonText}>
-                      {loading || isCapturing ? '' : t('recharge.detectBtn') || 'Détecter le code'}
-                    </Text>
-                  </TouchableOpacity>
+                {detectedOp && (
+                  <View style={styles.detectedBadge}>
+                    <Image source={detectedOp.logo} style={styles.miniLogo} resizeMode="contain" />
+                    <Text style={styles.detectedText}>{detectedOp.name}</Text>
+                  </View>
                 )}
               </View>
-
             </View>
-          </View>
-        )}
-      </SafeAreaView>
+
+            {/* FOOTER */}
+            <View style={[styles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <View style={styles.footerInner}>
+                <View style={styles.statusBox}>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>RECHARGE FLASH</Text>
+                  <Text style={[styles.status, { color: theme.text }]} numberOfLines={1}>
+                    {statusLabel}
+                  </Text>
+                </View>
+
+                {/* Progress bar animée */}
+                <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
+                  <Animated.View style={[
+                    styles.progressFill,
+                    { width: progressWidth, backgroundColor: progressColor },
+                  ]} />
+                </View>
+
+                <View style={styles.actionRow}>
+                  {/* Bouton reset/galerie à gauche */}
+                  {detectedOp ? (
+                    <TouchableOpacity
+                      style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                      onPress={handleReset}
+                    >
+                      <Ionicons name="refresh-outline" size={26} color={theme.text} />
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.galleryButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                      onPress={pickImage}
+                      disabled={loading}
+                    >
+                      <Ionicons name="images-outline" size={26} color={theme.text} />
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Bouton principal : code USSD OU réessayer OU capturer */}
+                  {ussdCode && detectedOp ? (
+                    <TouchableOpacity
+                      style={[styles.ussdButton, { backgroundColor: detectedOp.color }]}
+                      onPress={handleUssdPress}
+                      activeOpacity={0.75}
+                    >
+                      <Ionicons name="call" size={18} color="#000" />
+                      <Text style={styles.ussdCode} numberOfLines={1} adjustsFontSizeToFit>
+                        {ussdCode}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : imageUri && !loading ? (
+                    <TouchableOpacity
+                      style={[styles.mainButton, { backgroundColor: '#ED1C24' }]}
+                      onPress={handleReset}
+                    >
+                      <Ionicons name="refresh-outline" size={22} color="#FFF" />
+                      <Text style={[styles.mainButtonText, { color: '#FFF' }]}>
+                        {t('recharge.retry') || 'Réessayer'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.mainButton, { backgroundColor: theme.tint }]}
+                      onPress={captureFromCamera}
+                      disabled={loading || isCapturing}
+                    >
+                      {loading || isCapturing
+                        ? <ActivityIndicator color="#000" size="small" />
+                        : <Ionicons name="scan-outline" size={22} color="#000" />
+                      }
+                      <Text style={styles.mainButtonText}>
+                        {loading || isCapturing ? '' : t('recharge.detectBtn') || 'Détecter le code'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            </View>
+          </SafeAreaView>
+        </>
+      )}
     </View>
   );
 }
