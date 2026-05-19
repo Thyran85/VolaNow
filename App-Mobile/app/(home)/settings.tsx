@@ -97,7 +97,7 @@ export default function SettingsPage() {
             icon="moon" 
             title={t('settings.darkMode')} 
             subtitle={isDark ? t('settings.on') : t('settings.off')} 
-            color="#CCFF00" 
+            color={isDark ? "#CCFF00" : "#6366F1"} 
             rightElement={
               <Switch
                 trackColor={{ false: theme.border, true: "#CCFF0055" }}
