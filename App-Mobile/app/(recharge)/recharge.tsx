@@ -40,10 +40,10 @@ const OPERATORS = {
 };
 
 const PROGRESS_STEPS = [
-  { label: "Chargement de l'image...", target: 0.2,  duration: 400 },
-  { label: 'Analyse en cours...',      target: 0.5,  duration: 700 },
-  { label: 'Extraction du code...',    target: 0.8,  duration: 600 },
-  { label: 'Finalisation...',          target: 0.95, duration: 400 },
+  { labelKey: 'recharge.stepLoading', target: 0.2,  duration: 400 },
+  { labelKey: 'recharge.stepAnalyzing', target: 0.5,  duration: 700 },
+  { labelKey: 'recharge.stepExtracting', target: 0.8,  duration: 600 },
+  { labelKey: 'recharge.stepFinalizing', target: 0.95, duration: 400 },
 ];
 
 export default function RechargePage() {
@@ -56,7 +56,7 @@ export default function RechargePage() {
   const [permission, requestPermission] = useCameraPermissions();
   const [detectedOp, setDetectedOp]           = useState<any>(null);
   const [loading, setLoading]                 = useState(false);
-  const [statusLabel, setStatusLabel]         = useState('Placez la carte dans le cadre');
+  const [statusLabel, setStatusLabel]         = useState('recharge.placeCard');
   const [imageUri, setImageUri]               = useState<string | null>(null);
   const [transactionDone, setTransactionDone] = useState(false);
   const [detectedCode, setDetectedCode]       = useState<string | null>(null);
@@ -86,7 +86,7 @@ export default function RechargePage() {
 
   const resetProgress = () => {
     progressAnim.setValue(0.05);
-    setStatusLabel('Placez la carte dans le cadre');
+    setStatusLabel('recharge.placeCard');
   };
 
   // ── OCR (remplacé par ML Kit en bare workflow) ─────────────────
@@ -96,7 +96,7 @@ export default function RechargePage() {
 
     try {
       for (const step of PROGRESS_STEPS) {
-        setStatusLabel(step.label);
+        setStatusLabel(step.labelKey);
         await animateTo(step.target, step.duration);
       }
 
@@ -148,7 +148,7 @@ export default function RechargePage() {
 
       if (!code) {
         await animateTo(1, 200);
-        Alert.alert('Code non détecté', 'Veuillez bien centrer la carte et réessayer.');
+        Alert.alert(t('recharge.codeNotDetectedTitle'), t('recharge.codeNotDetectedMsg'));
         resetProgress();
         return;
       }
@@ -165,14 +165,14 @@ export default function RechargePage() {
       setDetectedOp(op);
       setUssdCode(formatted);
 
-      setStatusLabel('Code détecté ✓');
+      setStatusLabel('recharge.codeDetected');
       await animateTo(1, 300);
       triggerVibration('success');
 
     } catch (error) {
       console.error('OCR Error:', error);
       resetProgress();
-      Alert.alert("Erreur d'analyse", 'Impossible de lire la carte.\nRéessayez avec une meilleure lumière.');
+      Alert.alert(t('recharge.analysisErrorTitle'), t('recharge.analysisErrorMsg'));
     } finally {
       setLoading(false);
     }
@@ -185,7 +185,7 @@ export default function RechargePage() {
 
     if (status !== 'granted') {
       triggerVibration('error');
-      Alert.alert('Permission refusée', "L'accès à la galerie est requis.");
+      Alert.alert(t('recharge.galleryPermissionDeniedTitle'), t('recharge.galleryPermissionDeniedMsg'));
       return;
     }
 
@@ -219,7 +219,7 @@ export default function RechargePage() {
       }
     } catch (error) {
       console.error('In-app Capture Error:', error);
-      Alert.alert('Erreur', 'Impossible de capturer la photo depuis la caméra.');
+      Alert.alert(t('recharge.errorTitle'), t('recharge.captureErrorMsg'));
     } finally {
       setIsCapturing(false);
     }
@@ -239,7 +239,7 @@ export default function RechargePage() {
       setTransactionDone(true);
     } catch (error) {
       console.error('USSD Error:', error);
-      Alert.alert('Erreur', 'Impossible d\'exécuter le code USSD');
+      Alert.alert(t('recharge.errorTitle'), t('recharge.ussdErrorMsg'));
     }
   };
 
@@ -390,9 +390,9 @@ export default function RechargePage() {
             <View style={[styles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={styles.footerInner}>
                 <View style={styles.statusBox}>
-                  <Text style={[styles.label, { color: theme.textSecondary }]}>RECHARGE FLASH</Text>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>{t('home.rechargeTitle').toUpperCase()}</Text>
                   <Text style={[styles.status, { color: theme.text }]} numberOfLines={1}>
-                    {statusLabel}
+                    {t(statusLabel)}
                   </Text>
                 </View>
 
