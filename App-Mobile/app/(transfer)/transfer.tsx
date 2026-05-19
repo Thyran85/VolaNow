@@ -26,7 +26,12 @@ export default function TransferPage() {
   const [amount, setAmount] = useState("");
   const [transactionDone, setTransactionDone] = useState(false);
 
-  const operators: { id: OperatorId, name: string, color: string }[] = [
+  const senderOperators: { id: OperatorId, name: string, color: string }[] = [
+    { id: "mvola", name: "MVola", color: "#e6e200ff" },
+    { id: "orange", name: "Orange", color: "#FF7900" },
+  ];
+
+  const recipientOperators: { id: OperatorId, name: string, color: string }[] = [
     { id: "mvola", name: "MVola", color: "#e6e200ff" },
     { id: "orange", name: "Orange", color: "#FF7900" },
     { id: "airtel", name: "Airtel", color: "#ED1C24" },
@@ -110,7 +115,7 @@ export default function TransferPage() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>{t('transfer.step1')}</Text>
         <View style={styles.operatorGrid}>
-          {operators.map((op) => (
+          {senderOperators.map((op) => (
             <TouchableOpacity
               key={op.id}
               style={[
@@ -129,7 +134,7 @@ export default function TransferPage() {
 
         <Text style={styles.sectionTitle}>{t('transfer.step2')}</Text>
         <View style={styles.operatorGrid}>
-          {operators.map((op) => (
+          {recipientOperators.map((op) => (
             <TouchableOpacity
               key={op.id}
               style={[
