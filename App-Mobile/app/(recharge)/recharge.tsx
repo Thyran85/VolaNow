@@ -62,6 +62,7 @@ export default function RechargePage() {
   const [detectedCode, setDetectedCode]       = useState<string | null>(null);
   const [ussdCode, setUssdCode]               = useState<string | null>(null);
   const [isCapturing, setIsCapturing]         = useState(false);
+  const [torchEnabled, setTorchEnabled]       = useState(false);
 
   const cameraRef = useRef<any>(null);
   const progressAnim = useRef(new Animated.Value(0.05)).current;
@@ -250,6 +251,7 @@ export default function RechargePage() {
     setDetectedCode(null);
     setUssdCode(null);
     setTransactionDone(false);
+    setTorchEnabled(false);
     resetProgress();
   };
 
@@ -325,7 +327,7 @@ export default function RechargePage() {
             {imageUri ? (
               <Image source={{ uri: imageUri }} style={styles.fullPreviewImage} resizeMode="cover" />
             ) : (
-              <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+              <CameraView ref={cameraRef} style={styles.camera} facing="back" enableTorch={torchEnabled} />
             )}
           </View>
 
@@ -349,6 +351,19 @@ export default function RechargePage() {
             >
               <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
             </TouchableOpacity>
+
+            {/* BOUTON FLASH FLOTTANT */}
+            {!imageUri && (
+              <TouchableOpacity
+                style={styles.floatingTorchButton}
+                onPress={() => {
+                  triggerVibration('light');
+                  setTorchEnabled(prev => !prev);
+                }}
+              >
+                <Ionicons name={torchEnabled ? 'flash' : 'flash-off'} size={24} color="#FFF" />
+              </TouchableOpacity>
+            )}
 
             {/* CADRE DE SCAN */}
             <View style={styles.scanContainer}>
@@ -463,6 +478,11 @@ const styles = StyleSheet.create({
   mainOverlay:       { flex: 1, zIndex: 1, justifyContent: 'space-between' },
   floatingNavButton: {
     position: 'absolute', top: 20, left: 20, zIndex: 10,
+    padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  floatingTorchButton: {
+    position: 'absolute', top: 20, right: 20, zIndex: 10,
     padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
