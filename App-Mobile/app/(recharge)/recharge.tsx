@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, View, Text, TouchableOpacity, Image, Linking,
-  ActivityIndicator, useWindowDimensions, Platform, Alert, Animated
+  ActivityIndicator, useWindowDimensions, Platform, Alert, Animated, Modal
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import { useVibration } from '@/context/VibrationContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
 import RNImmediatePhoneCall from 'react-native-immediate-phone-call';
+import * as Clipboard from 'expo-clipboard';
 
 // ─── Opérateurs avec format USSD correct ─────────────────────────────────────
 // Telma  → #321*CODE# (14 chiffres)
@@ -63,6 +64,7 @@ export default function RechargePage() {
   const [ussdCode, setUssdCode]               = useState<string | null>(null);
   const [isCapturing, setIsCapturing]         = useState(false);
   const [torchEnabled, setTorchEnabled]       = useState(false);
+  const [scanError, setScanError]             = useState<{ title: string; message: string } | null>(null);
 
   const cameraRef = useRef<any>(null);
   const progressAnim = useRef(new Animated.Value(0.05)).current;
@@ -148,7 +150,7 @@ export default function RechargePage() {
 
       if (!code) {
         await animateTo(1, 200);
-        Alert.alert(t('recharge.codeNotDetectedTitle'), t('recharge.codeNotDetectedMsg'));
+        setScanError({ title: t('recharge.codeNotDetectedTitle'), message: t('recharge.codeNotDetectedMsg') });
         resetProgress();
         return;
       }
@@ -172,7 +174,7 @@ export default function RechargePage() {
     } catch (error) {
       console.error('OCR Error:', error);
       resetProgress();
-      Alert.alert(t('recharge.analysisErrorTitle'), t('recharge.analysisErrorMsg'));
+      setScanError({ title: t('recharge.analysisErrorTitle'), message: t('recharge.analysisErrorMsg') });
     } finally {
       setLoading(false);
     }
@@ -185,7 +187,7 @@ export default function RechargePage() {
 
     if (status !== 'granted') {
       triggerVibration('error');
-      Alert.alert(t('recharge.galleryPermissionDeniedTitle'), t('recharge.galleryPermissionDeniedMsg'));
+      setScanError({ title: t('recharge.galleryPermissionDeniedTitle'), message: t('recharge.galleryPermissionDeniedMsg') });
       return;
     }
 
@@ -219,7 +221,7 @@ export default function RechargePage() {
       }
     } catch (error) {
       console.error('In-app Capture Error:', error);
-      Alert.alert(t('recharge.errorTitle'), t('recharge.captureErrorMsg'));
+      setScanError({ title: t('recharge.errorTitle'), message: t('recharge.captureErrorMsg') });
     } finally {
       setIsCapturing(false);
     }
@@ -239,8 +241,19 @@ export default function RechargePage() {
       setTransactionDone(true);
     } catch (error) {
       console.error('USSD Error:', error);
-      Alert.alert(t('recharge.errorTitle'), t('recharge.ussdErrorMsg'));
+      setScanError({ title: t('recharge.errorTitle'), message: t('recharge.ussdErrorMsg') });
     }
+  };
+
+  // ── Copie du code USSD dans le presse-papiers ─────────────────────────────
+  const handleCopyUssd = async () => {
+    if (!ussdCode) return;
+    triggerVibration('light');
+    await Clipboard.setStringAsync(ussdCode);
+    setStatusLabel('recharge.codeCopied');
+    setTimeout(() => {
+      setStatusLabel('recharge.codeDetected');
+    }, 2000);
   };
 
   // ── Reset complet ─────────────────────────────────────────────────────────
@@ -425,16 +438,25 @@ export default function RechargePage() {
 
                   {/* Bouton principal : code USSD OU réessayer OU capturer */}
                   {ussdCode && detectedOp ? (
-                    <TouchableOpacity
-                      style={[styles.ussdButton, { backgroundColor: detectedOp.color }]}
-                      onPress={handleUssdPress}
-                      activeOpacity={0.75}
-                    >
-                      <Ionicons name="call" size={18} color="#000" />
-                      <Text style={styles.ussdCode} numberOfLines={1} adjustsFontSizeToFit>
-                        {ussdCode}
-                      </Text>
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity
+                        style={[styles.ussdButton, { backgroundColor: detectedOp.color }]}
+                        onPress={handleUssdPress}
+                        activeOpacity={0.75}
+                      >
+                        <Ionicons name="call" size={18} color="#000" />
+                        <Text style={styles.ussdCode} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+                          {ussdCode}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.copyButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                        onPress={handleCopyUssd}
+                      >
+                        <Ionicons name="copy-outline" size={24} color={theme.text} />
+                      </TouchableOpacity>
+                    </>
                   ) : imageUri && !loading ? (
                     <TouchableOpacity
                       style={[styles.mainButton, { backgroundColor: '#ED1C24' }]}
@@ -466,6 +488,44 @@ export default function RechargePage() {
           </SafeAreaView>
         </>
       )}
+
+      {/* MODAL D'ERREUR DE SCAN THÉMÉ */}
+      <Modal
+        visible={scanError !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setScanError(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setScanError(null)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[styles.modalContent, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          >
+            <View style={styles.errorIconContainer}>
+              <Ionicons name="alert-circle" size={40} color="#ED1C24" />
+            </View>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {scanError?.title}
+            </Text>
+            <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>
+              {scanError?.message}
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalCloseButton, { backgroundColor: theme.tint }]}
+              onPress={() => {
+                triggerVibration('light');
+                setScanError(null);
+              }}
+            >
+              <Text style={styles.modalCloseButtonText}>{t('recharge.retry') || "Réessayer"}</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -514,6 +574,10 @@ const styles = StyleSheet.create({
     width: 60, height: 60, borderRadius: 18,
     justifyContent: 'center', alignItems: 'center', borderWidth: 1,
   },
+  copyButton:        {
+    width: 60, height: 60, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1,
+  },
   mainButton:        {
     flex: 1, height: 60, borderRadius: 18, flexDirection: 'row',
     justifyContent: 'center', alignItems: 'center', gap: 10,
@@ -521,11 +585,60 @@ const styles = StyleSheet.create({
   mainButtonText:    { color: '#000', fontWeight: '900', fontSize: 14 },
   ussdButton:        {
     flex: 1, height: 60, borderRadius: 18, flexDirection: 'row',
-    justifyContent: 'center', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14,
+    justifyContent: 'center', alignItems: 'center', gap: 6,
+    paddingHorizontal: 8,
   },
   ussdCode:          {
-    color: '#000', fontWeight: '900', fontSize: 15,
-    letterSpacing: 0.5, flexShrink: 1,
+    color: '#000', fontWeight: '900', fontSize: 17,
+    letterSpacing: 0.2, flexShrink: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 28,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  errorIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(237, 28, 36, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalCloseButton: {
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButtonText: {
+    color: '#000',
+    fontWeight: '900',
+    fontSize: 14,
   },
 });

@@ -70,6 +70,7 @@ const resources = {
         galleryPermissionDeniedMsg: "L'accès à la galerie est requis.",
         captureErrorMsg: "Impossible de capturer la photo depuis la caméra.",
         ussdErrorMsg: "Impossible d'exécuter le code USSD",
+        codeCopied: "Code copié dans le presse-papiers !",
       },
       withdrawal: {
         title: "Retrait d'argent",
@@ -195,6 +196,7 @@ const resources = {
         galleryPermissionDeniedMsg: "Access to the gallery is required.",
         captureErrorMsg: "Unable to capture photo from the camera.",
         ussdErrorMsg: "Unable to execute the USSD code",
+        codeCopied: "Code copied to clipboard!",
       },
       withdrawal: {
         title: "Money Withdrawal",
@@ -320,6 +322,7 @@ const resources = {
         galleryPermissionDeniedMsg: "Mila alalana hidirana amin'ny sary.",
         captureErrorMsg: "Tsy afaka naka sary tamin'ny camera.",
         ussdErrorMsg: "Tsy nahomby ny USSD",
+        codeCopied: "Kaody voadika soa aman-tsara!",
       },
       withdrawal: {
         title: "Fisintonana vola",
