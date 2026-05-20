@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image, ActivityIndicator, StyleSheet, Animated, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Image, ActivityIndicator, StyleSheet, Animated, Platform, useWindowDimensions, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,10 +27,10 @@ try {
 }
 
 const PROGRESS_STEPS = [
-  { label: "Chargement de l'image...", target: 0.2, duration: 400 },
-  { label: 'Analyse en cours...', target: 0.5, duration: 700 },
-  { label: 'Extraction du code...', target: 0.8, duration: 600 },
-  { label: 'Finalisation...', target: 0.95, duration: 400 },
+  { labelKey: 'withdrawal.stepLoading', target: 0.2, duration: 400 },
+  { labelKey: 'withdrawal.stepAnalyzing', target: 0.5, duration: 700 },
+  { labelKey: 'withdrawal.stepExtracting', target: 0.8, duration: 600 },
+  { labelKey: 'withdrawal.stepFinalizing', target: 0.95, duration: 400 },
 ];
 
 interface WithdrawalScannerProps {
@@ -46,10 +46,12 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
-  const [statusLabel, setStatusLabel] = useState('Placez le numéro dans le cadre');
+  const [statusLabel, setStatusLabel] = useState('withdrawal.placeCard');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [torchEnabled, setTorchEnabled] = useState(false);
+  const [scanError, setScanError] = useState<{ title: string; message: string } | null>(null);
 
   const cameraRef = useRef<any>(null);
   const progressAnim = useRef(new Animated.Value(0.05)).current;
@@ -72,7 +74,8 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
   const resetProgress = () => {
     progressAnim.setValue(0.05);
-    setStatusLabel('Placez le numéro dans le cadre');
+    setStatusLabel('withdrawal.placeCard');
+    setTorchEnabled(false);
   };
 
   const runOCRAnalysis = async (uri: string) => {
@@ -81,7 +84,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
     try {
       for (const step of PROGRESS_STEPS) {
-        setStatusLabel(step.label);
+        setStatusLabel(step.labelKey);
         await animateTo(step.target, step.duration);
       }
 
@@ -103,7 +106,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
         if (!fullText || fullText.trim() === '') {
           await animateTo(1, 200);
-          Alert.alert('Texte non détecté', 'Aucun texte n\'a été trouvé. Veuillez réessayer.');
+          setScanError({ title: t('withdrawal.textNotDetectedTitle'), message: t('withdrawal.textNotDetectedMsg') });
           resetProgress();
           return;
         }
@@ -114,10 +117,10 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
         if (!code) {
           await animateTo(1, 200);
-          Alert.alert(
-            'Numéro non détecté',
-            `Texte lu: "${fullText}"\n\nAucun numéro commençant par 03 et comportant 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
-          );
+          setScanError({
+            title: t('withdrawal.numberNotDetectedTitle'),
+            message: `${t('withdrawal.numberNotDetectedMsg')}\n\n[${t('recharge.detectBtn')}: "${fullText}"]`
+          });
           resetProgress();
           return;
         }
@@ -133,7 +136,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
       if (!fullText || fullText.trim() === '') {
         await animateTo(1, 200);
-        Alert.alert('Texte non détecté', 'Aucun texte n\'a été trouvé. Veuillez réessayer.');
+        setScanError({ title: t('withdrawal.textNotDetectedTitle'), message: t('withdrawal.textNotDetectedMsg') });
         resetProgress();
         return;
       }
@@ -144,10 +147,10 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
       if (!code) {
         await animateTo(1, 200);
-        Alert.alert(
-          'Numéro non détecté',
-          `Texte lu: "${fullText}"\n\nAucun numéro commençant par 03 et comportant 10 chiffres trouvé. Veuillez centrer le numéro et réessayer.`
-        );
+        setScanError({
+          title: t('withdrawal.numberNotDetectedTitle'),
+          message: `${t('withdrawal.numberNotDetectedMsg')}\n\n[${t('recharge.detectBtn')}: "${fullText}"]`
+        });
         resetProgress();
         return;
       }
@@ -159,7 +162,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
       console.error('OCR Error:', error);
       resetProgress();
       const errorMessage = error instanceof Error ? error.message : String(error);
-      Alert.alert("Erreur OCR", `Erreur: ${errorMessage}\nRéessayez.`);
+      setScanError({ title: t('withdrawal.ocrErrorTitle'), message: `Erreur: ${errorMessage}\nRéessayez.` });
     } finally {
       setLoading(false);
     }
@@ -171,7 +174,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
 
     if (status !== 'granted') {
       triggerVibration('error');
-      Alert.alert('Permission refusée', "L'accès à la galerie est requis.");
+      setScanError({ title: t('withdrawal.galleryPermissionDeniedTitle'), message: t('withdrawal.galleryPermissionDeniedMsg') });
       return;
     }
 
@@ -204,7 +207,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
       }
     } catch (error) {
       console.error('In-app Capture Error:', error);
-      Alert.alert('Erreur', 'Impossible de capturer la photo depuis la caméra.');
+      setScanError({ title: t('withdrawal.ocrErrorTitle'), message: t('withdrawal.captureErrorMsg') });
     } finally {
       setIsCapturing(false);
     }
@@ -226,25 +229,39 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={localStyles.fullPreviewImage} resizeMode="cover" />
         ) : (
-          <CameraView ref={cameraRef} style={localStyles.camera} facing="back" />
+          <CameraView ref={cameraRef} style={localStyles.camera} facing="back" enableTorch={torchEnabled} />
         )}
       </View>
 
       <SafeAreaContext style={localStyles.mainOverlay} edges={['top', 'bottom']}>
-        <TouchableOpacity
-          style={localStyles.floatingNavButton}
-          onPress={() => {
-            triggerVibration('light');
-            if (imageUri) {
-              setImageUri(null);
-              resetProgress();
-            } else {
-              onClose();
-            }
-          }}
-        >
-          <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
-        </TouchableOpacity>
+        <View style={localStyles.headerActionsRow}>
+          <TouchableOpacity
+            style={localStyles.floatingNavButton}
+            onPress={() => {
+              triggerVibration('light');
+              if (imageUri) {
+                setImageUri(null);
+                resetProgress();
+              } else {
+                onClose();
+              }
+            }}
+          >
+            <Ionicons name={imageUri ? 'close' : 'arrow-back'} size={28} color="#FFF" />
+          </TouchableOpacity>
+
+          {!imageUri && (
+            <TouchableOpacity
+              style={localStyles.floatingTorchButton}
+              onPress={() => {
+                triggerVibration('light');
+                setTorchEnabled(!torchEnabled);
+              }}
+            >
+              <Ionicons name={torchEnabled ? 'flash' : 'flash-off'} size={24} color="#FFF" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View style={localStyles.scanContainer}>
           <View style={[localStyles.frame, {
@@ -262,9 +279,9 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
         <View style={[localStyles.footerWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={localStyles.footerInner}>
             <View style={localStyles.statusBox}>
-              <Text style={[localStyles.label, { color: theme.textSecondary }]}>SCAN CASHPOINT</Text>
+              <Text style={[localStyles.label, { color: theme.textSecondary }]}>{t('withdrawal.scanLabel')}</Text>
               <Text style={[localStyles.status, { color: theme.text }]} numberOfLines={1}>
-                {statusLabel}
+                {t(statusLabel)}
               </Text>
             </View>
 
@@ -344,6 +361,44 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
           </View>
         </View>
       </SafeAreaContext>
+
+      {/* MODAL D'ERREUR DE SCAN THÉMÉ */}
+      <Modal
+        visible={scanError !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setScanError(null)}
+      >
+        <TouchableOpacity
+          style={localStyles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setScanError(null)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[localStyles.modalContent, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          >
+            <View style={localStyles.errorIconContainer}>
+              <Ionicons name="alert-circle" size={40} color="#ED1C24" />
+            </View>
+            <Text style={[localStyles.modalTitle, { color: theme.text }]}>
+              {scanError?.title}
+            </Text>
+            <Text style={[localStyles.modalMessage, { color: theme.textSecondary }]}>
+              {scanError?.message}
+            </Text>
+            <TouchableOpacity
+              style={[localStyles.modalCloseButton, { backgroundColor: theme.tint }]}
+              onPress={() => {
+                triggerVibration('light');
+                setScanError(null);
+              }}
+            >
+              <Text style={localStyles.modalCloseButtonText}>{t('recharge.retry') || "Réessayer"}</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -354,8 +409,20 @@ const localStyles = StyleSheet.create({
   camera: { flex: 1 },
   fullPreviewImage: { flex: 1 },
   mainOverlay: { flex: 1, zIndex: 1, justifyContent: 'space-between' },
+  headerActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 20,
+    height: 60,
+    zIndex: 10,
+  },
   floatingNavButton: {
-    position: 'absolute', top: 20, left: 20, zIndex: 10,
+    padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  floatingTorchButton: {
     padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
@@ -394,5 +461,54 @@ const localStyles = StyleSheet.create({
   ussdCode: {
     color: '#000', fontWeight: '900', fontSize: 15,
     letterSpacing: 0.5, flexShrink: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 28,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  errorIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(237, 28, 36, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalCloseButton: {
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButtonText: {
+    color: '#000',
+    fontWeight: '900',
+    fontSize: 14,
   },
 });
