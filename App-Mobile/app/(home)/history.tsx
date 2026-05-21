@@ -1,4 +1,5 @@
-import { View, Text, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useHistory, HistoryItem } from '@/context/HistoryContext';

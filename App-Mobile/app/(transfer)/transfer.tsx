@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, Linking, ScrollView, SafeAreaView, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, Linking, ScrollView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import RNImmediatePhoneCall from 'react-native-immediate-phone-call';

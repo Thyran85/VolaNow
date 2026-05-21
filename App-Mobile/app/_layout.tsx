@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Platform, PermissionsAndroid } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -75,10 +76,11 @@ export default function RootLayout() {
   if (!isLoaded) return null;
 
   return (
-    <VibrationProvider>
-      <AppThemeProvider>
-        <HistoryProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <SafeAreaProvider>
+      <VibrationProvider>
+        <AppThemeProvider>
+          <HistoryProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
               {/* Page d'accueil avec onglets */}
               <Stack.Screen name="(home)" options={{ headerShown: false }} />
@@ -97,5 +99,6 @@ export default function RootLayout() {
         </HistoryProvider>
       </AppThemeProvider>
     </VibrationProvider>
+    </SafeAreaProvider>
   );
 }

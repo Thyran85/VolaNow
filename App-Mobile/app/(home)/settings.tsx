@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, Switch, Alert, Modal, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch, Alert, Modal, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -23,15 +24,15 @@ export default function SettingsPage() {
   ];
 
   const developers = [
-    { id: 1, name: 'Thierry R.', role: 'Lead Developer', url: 'https://github.com/thyran85' },
-    { id: 2, name: 'Dev 02', role: 'UI/UX Designer', url: 'https://portfolio-dev2.com' },
-    { id: 3, name: 'Dev 03', role: 'Mobile Specialist', url: 'https://portfolio-dev3.com' },
+    { id: 1, name: 'Thierry R.', role: 'Full-Stack & Mobile', url: 'https://portfolio-thierry-randria.vercel.app/' },
+    { id: 2, name: 'Manoa Fanekena', role: 'Mobile developper', url: 'https://manoa-portfolio.vercel.app/' },
+    { id: 3, name: 'Mika R.', role: 'Mobile developper', url: 'github.com/2404mika' },
   ];
 
   const helpSteps = t('settings.helpContent').split('\n');
 
   const toggleVibration = () => setVibrationEnabled(!isVibrationEnabled);
-  
+
   const toggleDarkMode = () => {
     const newMode = isDark ? 'light' : 'dark';
     setMode(newMode);
@@ -79,11 +80,11 @@ export default function SettingsPage() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
-          <SettingItem 
-            icon="smartphone" 
-            title={t('settings.vibration')} 
-            subtitle={isVibrationEnabled ? t('settings.enabled') : t('settings.disabled')} 
-            color="#3B82F6" 
+          <SettingItem
+            icon="smartphone"
+            title={t('settings.vibration')}
+            subtitle={isVibrationEnabled ? t('settings.enabled') : t('settings.disabled')}
+            color="#3B82F6"
             rightElement={
               <Switch
                 trackColor={{ false: theme.border, true: "#3B82F655" }}
@@ -93,11 +94,11 @@ export default function SettingsPage() {
               />
             }
           />
-          <SettingItem 
-            icon="moon" 
-            title={t('settings.darkMode')} 
-            subtitle={isDark ? t('settings.on') : t('settings.off')} 
-            color={isDark ? "#CCFF00" : "#6366F1"} 
+          <SettingItem
+            icon="moon"
+            title={t('settings.darkMode')}
+            subtitle={isDark ? t('settings.on') : t('settings.off')}
+            color={isDark ? "#CCFF00" : "#6366F1"}
             rightElement={
               <Switch
                 trackColor={{ false: theme.border, true: "#CCFF0055" }}
@@ -107,27 +108,27 @@ export default function SettingsPage() {
               />
             }
           />
-          <SettingItem 
-            icon="globe" 
-            title={t('settings.language')} 
-            subtitle={i18n.language === 'mg' ? "Malagasy" : i18n.language === 'fr' ? "Français" : "English"} 
-            color="#F59E0B" 
+          <SettingItem
+            icon="globe"
+            title={t('settings.language')}
+            subtitle={i18n.language === 'mg' ? "Malagasy" : i18n.language === 'fr' ? "Français" : "English"}
+            color="#F59E0B"
             onPress={() => setIsLanguageModalVisible(true)}
           />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
-          <SettingItem 
-            icon="help-circle" 
-            title={t('settings.help')} 
-            color="#8B5CF6" 
+          <SettingItem
+            icon="help-circle"
+            title={t('settings.help')}
+            color="#8B5CF6"
             onPress={showHelp}
           />
-          <SettingItem 
-            icon="info" 
-            title={t('settings.about')} 
-            color="#6B7280" 
+          <SettingItem
+            icon="info"
+            title={t('settings.about')}
+            color="#6B7280"
             onPress={showAbout}
           />
         </View>
@@ -145,9 +146,9 @@ export default function SettingsPage() {
         animationType="slide"
         onRequestClose={() => setIsLanguageModalVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setIsLanguageModalVisible(false)}
         >
           <View style={styles.modalContent}>
@@ -184,9 +185,9 @@ export default function SettingsPage() {
         animationType="slide"
         onRequestClose={() => setIsHelpModalVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setIsHelpModalVisible(false)}
         >
           <View style={styles.modalContent}>
@@ -227,9 +228,9 @@ export default function SettingsPage() {
         animationType="slide"
         onRequestClose={() => setIsAboutModalVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setIsAboutModalVisible(false)}
         >
           <View style={styles.modalContent}>
@@ -246,8 +247,8 @@ export default function SettingsPage() {
               </Text>
 
               {developers.map((dev) => (
-                <TouchableOpacity 
-                  key={dev.id} 
+                <TouchableOpacity
+                  key={dev.id}
                   style={styles.devCard}
                   onPress={() => openURL(dev.url)}
                 >
