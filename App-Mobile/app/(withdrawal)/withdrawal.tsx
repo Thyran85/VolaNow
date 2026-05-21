@@ -38,7 +38,7 @@ export default function WithdrawalPage() {
   ];
 
   const handleWithdrawal = async () => {
-    if (!isValidCashPointId(cashPoint)) {
+    if (!isValidCashPointId(cashPoint, operator)) {
       triggerVibration('warning');
       Alert.alert(t('common.error'), t('withdrawal.errorId'));
       return;
@@ -210,10 +210,10 @@ export default function WithdrawalPage() {
           <TouchableOpacity 
             style={[
               styles.actionButton, 
-              { backgroundColor: (isValidAmount(amount) && isValidCashPointId(cashPoint) && (operator !== 'airtel' || agentCode.trim())) ? theme.tint : theme.border }
+              { backgroundColor: (isValidAmount(amount) && isValidCashPointId(cashPoint, operator) && (operator !== 'airtel' || agentCode.trim())) ? theme.tint : theme.border }
             ]}
             onPress={handleWithdrawal}
-            disabled={!isValidAmount(amount) || !isValidCashPointId(cashPoint) || (operator === 'airtel' && !agentCode.trim())}
+            disabled={!isValidAmount(amount) || !isValidCashPointId(cashPoint, operator) || (operator === 'airtel' && !agentCode.trim())}
           >
             <Text style={styles.actionButtonText}>{t('withdrawal.confirmBtn')}</Text>
           </TouchableOpacity>

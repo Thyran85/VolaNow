@@ -112,8 +112,13 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
         }
 
         const cleaned = fullText.replace(/[\s\-]/g, '');
-        const codeMatch = cleaned.match(/03\d{8}/);
-        const code = codeMatch ? codeMatch[0] : null;
+        let codeMatch = cleaned.match(/03\d{8}/);
+        let code = codeMatch ? codeMatch[0] : null;
+
+        if (!code) {
+          codeMatch = cleaned.match(/(?<!\d)\d{7}(?!\d)/);
+          code = codeMatch ? codeMatch[0] : null;
+        }
 
         if (!code) {
           await animateTo(1, 200);
@@ -142,8 +147,13 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
       }
 
       const cleaned = fullText.replace(/[\s\-]/g, '');
-      const codeMatch = cleaned.match(/03\d{8}/);
-      const code = codeMatch ? codeMatch[0] : null;
+      let codeMatch = cleaned.match(/03\d{8}/);
+      let code = codeMatch ? codeMatch[0] : null;
+
+      if (!code) {
+        codeMatch = cleaned.match(/(?<!\d)\d{7}(?!\d)/);
+        code = codeMatch ? codeMatch[0] : null;
+      }
 
       if (!code) {
         await animateTo(1, 200);
