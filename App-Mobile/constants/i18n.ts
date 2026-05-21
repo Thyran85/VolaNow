@@ -440,8 +440,8 @@ const resources = {
       settings: {
         title: "Fandrindrana",
         preferences: "Safidy",
-        vibration: "Ovotra",
-        darkMode: "Mode Maizina",
+        vibration: "Miovitrovitra",
+        darkMode: "Maizina / Mazava",
         language: "Fiteny",
         support: "Fanohanana & Infos",
         help: "Fanampiana & Torolalana",

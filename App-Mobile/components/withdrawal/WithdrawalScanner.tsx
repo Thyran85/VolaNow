@@ -124,7 +124,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
           await animateTo(1, 200);
           setScanError({
             title: t('withdrawal.numberNotDetectedTitle'),
-            message: `${t('withdrawal.numberNotDetectedMsg')}\n\n[${t('recharge.detectBtn')}: "${fullText}"]`
+            message: t('withdrawal.numberNotDetectedMsg')
           });
           resetProgress();
           return;
@@ -159,7 +159,7 @@ export default function WithdrawalScanner({ onClose, onCodeDetected }: Withdrawa
         await animateTo(1, 200);
         setScanError({
           title: t('withdrawal.numberNotDetectedTitle'),
-          message: `${t('withdrawal.numberNotDetectedMsg')}\n\n[${t('recharge.detectBtn')}: "${fullText}"]`
+          message: t('withdrawal.numberNotDetectedMsg')
         });
         resetProgress();
         return;
