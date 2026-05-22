@@ -26,7 +26,7 @@ export default function SettingsPage() {
   const developers = [
     { id: 1, name: 'Fy Thierry', role: 'Full-Stack & Mobile', url: 'https://portfolio-thierry-randria.vercel.app/' },
     { id: 2, name: 'Manoa Fanekena', role: 'Mobile developper', url: 'https://manoa-portfolio.vercel.app/' },
-    { id: 3, name: 'Mika Heritiana.', role: 'Mobile developper', url: 'github.com/2404mika' },
+    { id: 3, name: 'Mika Heritiana', role: 'Mobile developper', url: 'github.com/2404mika' },
   ];
 
   const helpSteps = t('settings.helpContent').split('\n');
