@@ -131,6 +131,18 @@ export default function SettingsPage() {
             color="#6B7280"
             onPress={showAbout}
           />
+          <SettingItem
+            icon="shield"
+            title={t('settings.privacy')}
+            color="#10B981"
+            onPress={() => openURL('https://volanow.vercel.app/privacy')}
+          />
+          <SettingItem
+            icon="file-text"
+            title={t('settings.terms')}
+            color="#8B5CF6"
+            onPress={() => openURL('https://volanow.vercel.app/conditions')}
+          />
         </View>
 
         <View style={styles.footer}>
@@ -214,6 +226,18 @@ export default function SettingsPage() {
                 <Feather name="message-circle" size={24} color="#25D366" />
                 <Text style={styles.whatsappBadgeText}>
                   {t('settings.whatsappContact')}
+                </Text>
+              </View>
+              <View style={styles.whatsappBadge}>
+                <Feather name="message-circle" size={24} color="#25D366" />
+                <Text style={styles.whatsappBadgeText}>
+                  {t('settings.whatsappContact2')}
+                </Text>
+              </View>
+              <View style={styles.whatsappBadge}>
+                <Feather name="message-circle" size={24} color="#25D366" />
+                <Text style={styles.whatsappBadgeText}>
+                  {t('settings.whatsappContact3')}
                 </Text>
               </View>
             </ScrollView>

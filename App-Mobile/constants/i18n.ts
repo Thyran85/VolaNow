@@ -151,7 +151,11 @@ const resources = {
         off: "Désactivé",
         helpContent: "1. Choisissez votre service (Retrait ou Transfert).\n2. Sélectionnez l'opérateur concerné.\n3. Remplissez les informations demandées.\n4. Cliquez sur confirmer pour lancer l'appel USSD.\n5. Validez avec votre code secret sur votre téléphone.",
         whatsappContact: "Contact WhatsApp : +261 34 83 617 22",
+        whatsappContact2: "Contact WhatsApp : +261 33 61 432 73",
+        whatsappContact3: "Contact WhatsApp : +261 34 59 290 75",
         aboutDescription: "VolaNow est une application conçue pour simplifier vos transactions USSD quotidiennes à Madagascar, sans avoir besoin de connexion internet.",
+        privacy: "Politique de confidentialité",
+        terms: "Conditions d'utilisation",
       }
     }
   },
@@ -302,7 +306,11 @@ const resources = {
         off: "Off",
         helpContent: "1. Choose your service (Withdrawal or Transfer).\n2. Select the relevant operator.\n3. Fill in the requested information.\n4. Click confirm to launch the USSD call.\n5. Validate with your secret code on your phone.",
         whatsappContact: "WhatsApp Contact: +261 34 83 617 22",
+        whatsappContact2: "WhatsApp Contact: +261 33 61 432 73",
+        whatsappContact3: "WhatsApp Contact: +261 34 59 290 75",
         aboutDescription: "VolaNow is an application designed to simplify your daily USSD transactions in Madagascar, without the need for an internet connection.",
+        privacy: "Privacy Policy",
+        terms: "Terms of Service",
       }
     }
   },
@@ -453,7 +461,11 @@ const resources = {
         off: "Maty",
         helpContent: "1. Safidio ny serivisinao (Fisintonana na Fampitana).\n2. Safidio ny mpandraharaha mifandraika.\n3. Feno ny fampahalalana nangatahina.\n4. Tsindrio ny hanamafina mba handefa ny antso USSD.\n5. Hamafiso amin'ny kaody miafinao amin'ny telefaoninao.",
         whatsappContact: "WhatsApp Contact : +261 34 83 617 22",
+        whatsappContact2: "WhatsApp Contact : +261 33 61 432 73",
+        whatsappContact3: "WhatsApp Contact : +261 34 59 290 75",
         aboutDescription: "VolaNow dia application natao hanaovana ny fifanakalozana USSD isan'andro any Madagasikara, tsy mila connexion internet.",
+        privacy: "Politika momba ny fiainana manokana",
+        terms: "Fepetra fampiasana",
       }
     }
   }
