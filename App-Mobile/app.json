@@ -30,9 +30,6 @@
       ],
       "package": "com.volanow.app"
     },
-    "web": {
-      "output": "static"
-    },
     "plugins": [
       "expo-router",
       [
@@ -66,7 +63,6 @@
           }
         }
       ],
-      "expo-ocr-kit"
     ],
     "experiments": {
       "typedRoutes": true,
